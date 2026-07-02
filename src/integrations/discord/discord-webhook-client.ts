@@ -14,6 +14,7 @@ export interface DiscordMessageOptions {
 	allowed_mentions?: {
 		parse: readonly string[];
 	};
+	timeoutMs?: number;
 }
 
 /** Discord Webhook 連携で発生した失敗を表すエラー。 */
@@ -30,24 +31,50 @@ export class DiscordWebhookError extends Error {
 /** Discord Webhook URL への送信を担当するクライアント。 */
 export class DiscordWebhookClient {
 	private readonly webhookUrl: string;
+	private readonly defaultTimeoutMs = 10_000;
 
 	constructor(webhookUrl: string) {
 		this.webhookUrl = webhookUrl;
 	}
 
 	/** Discord Webhook API へ payload を POST する。 */
-	private async post(payload: DiscordPayload): Promise<void> {
+	private async post(
+		payload: DiscordPayload,
+		timeoutMs: number = this.defaultTimeoutMs,
+	): Promise<void> {
 		if (typeof globalThis.fetch !== "function") {
 			throw new DiscordWebhookError("ランタイムに fetch がありません");
 		}
 
-		const response = await fetch(this.webhookUrl, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify(payload),
-		});
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => {
+			controller.abort();
+		}, timeoutMs);
+
+		let response: Response;
+		try {
+			response = await fetch(this.webhookUrl, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(payload),
+				signal: controller.signal,
+			});
+		} catch (error) {
+			if (error instanceof DOMException && error.name === "AbortError") {
+				throw new DiscordWebhookError(
+					`Discord Webhook リクエストがタイムアウトしました: ${timeoutMs}ms`,
+					{
+						timeoutMs,
+					},
+				);
+			}
+
+			throw error;
+		} finally {
+			clearTimeout(timeoutId);
+		}
 
 		if (!response.ok) {
 			const text = await response.text();
@@ -66,11 +93,14 @@ export class DiscordWebhookClient {
 		content: string,
 		options: DiscordMessageOptions = {},
 	): Promise<void> {
-		await this.post({
-			content,
-			allowed_mentions: options.allowed_mentions ?? {
-				parse: [],
+		await this.post(
+			{
+				content,
+				allowed_mentions: options.allowed_mentions ?? {
+					parse: [],
+				},
 			},
-		});
+			options.timeoutMs,
+		);
 	}
 }
