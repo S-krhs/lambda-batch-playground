@@ -8,10 +8,9 @@
 
 ```text
 packages/libs/
-  string/
-    normalize.ts
-  date/
-    format-jst.ts
+  gacha/
+    gacha-pool.ts
+    gacha-pool.test.ts
 ```
 
 ## 依存方向
