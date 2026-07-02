@@ -35,10 +35,10 @@ export default $config({
 			);
 		}
 
-		// UMA ワンドロお題通知を毎日 JST 21:00 に起動する Scheduler を作成
+		// UMA ワンドロお題通知を毎日 JST 12:00 に起動する Scheduler を作成
 		new sst.aws.CronV2("UmaOneDrawTopicSchedule", {
 			function: batchFunction,
-			schedule: "cron(0 21 * * ? *)",
+			schedule: "cron(0 12 * * ? *)",
 			timezone: "Asia/Tokyo",
 			retries: 0,
 			event: {
