@@ -34,18 +34,14 @@ const umaOneDrawTopicSchedule = resolveScheduleExpression(
 const umaOneDrawTopicTimezone =
 	process.env.UMA_ONE_DRAW_TOPIC_TIMEZONE ||
 	DEFAULT_UMA_ONE_DRAW_TOPIC_TIMEZONE;
-const allowProductionRemove = process.env.ALLOW_PRODUCTION_REMOVE === "true";
 
 export default $config({
 	app(input) {
 		return {
 			name: appName,
 			home: "aws",
-			removal:
-				input?.stage === "production" && !allowProductionRemove
-					? "retain"
-					: "remove",
-			protect: input?.stage === "production" && !allowProductionRemove,
+			removal: input?.stage === "production" ? "retain" : "remove",
+			protect: input?.stage === "production",
 		};
 	},
 	async run() {
