@@ -9,4 +9,4 @@
 - ログ出力の共通ラッパー
 - Lambda や Node.js ランタイムに依存する薄い補助処理
 
-個別サービス連携の具体処理は `src/integrations/` に置きます。
+個別サービス連携の具体処理は `packages/integrations/*` に置きます。

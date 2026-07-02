@@ -1,0 +1,25 @@
+{
+	"$schema": "https://turbo.build/schema.json",
+	"globalEnv": [
+		"DISCORD_WEBHOOK_URL",
+		"UMA_ONE_DRAW_TOPIC_SCHEDULE",
+		"UMA_ONE_DRAW_TOPIC_TIMEZONE"
+	],
+	"tasks": {
+		"build": {
+			"dependsOn": ["^build"],
+			"outputs": ["dist/**"]
+		},
+		"typecheck": {
+			"dependsOn": ["^build"],
+			"outputs": []
+		},
+		"lint": {
+			"outputs": []
+		},
+		"validate": {
+			"dependsOn": ["typecheck", "lint"],
+			"outputs": []
+		}
+	}
+}

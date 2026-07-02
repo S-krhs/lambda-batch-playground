@@ -3,8 +3,10 @@
 
 # Build artifacts
 /dist/
+**/dist/
 function.zip
 /.sst/
+/.turbo/
 /.tmp/
 
 # Environment files

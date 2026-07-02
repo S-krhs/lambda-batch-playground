@@ -1,0 +1,6 @@
+{
+	"name": "@lambda-batch-playground/libs",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module"
+}

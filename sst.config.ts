@@ -46,7 +46,7 @@ export default $config({
 	},
 	async run() {
 		const batchFunction = new sst.aws.Function("BatchFunction", {
-			handler: "src/lambda-handler.handler",
+			handler: "apps/batch-playground/src/lambda-handler.handler",
 			runtime: "nodejs22.x",
 			timeout: "30 seconds",
 			memory: "128 MB",

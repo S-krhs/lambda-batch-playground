@@ -1,7 +1,8 @@
 // やること: UMA ワンドロのお題通知バッチをオーケストレーションする
 // やらないこと: お題メッセージ生成や Discord Webhook HTTP 通信の詳細を持つ
+import { DiscordWebhookClient } from "@lambda-batch-playground/integration-discord/discord-webhook-client.js";
+
 import { buildUmaOneDrawTopicMessage } from "../features/uma-one-draw-topic/topic-message.js";
-import { DiscordWebhookClient } from "../integrations/discord/discord-webhook-client.js";
 import type {
 	BatchHandler,
 	BatchResponse,

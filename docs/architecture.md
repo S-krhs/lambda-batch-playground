@@ -1,50 +1,63 @@
 # アーキテクチャ
 
-このドキュメントは、コードの配置、層の責務、依存方向を定義します。
-実装時のコメントや JSDoc などの書き方は `docs/implementation-rules.md` を参照します。
+このドキュメントは、モノレポ全体の配置、package 境界、依存方向を定義します。
+アプリ固有の構成は `apps/<app>/docs/`、package 固有の構成は各 package の `docs/` を参照します。
 
 ## 全体像
 
-このリポジトリは、Lambda イベントの `job` に応じてバッチジョブを実行します。
-`src/lambda-handler.ts` が Lambda の入口になり、`src/routing/` がジョブ名を解決し、`src/jobs/` が対象 feature を呼び出します。
-`sst.config.ts` が Lambda と EventBridge Scheduler を定義し、定期実行イベントから `job` を渡します。
+このリポジトリは npm workspaces と Turbo で管理する TypeScript モノレポです。
+Lambda バッチアプリは `apps/batch-playground/` に置き、外部サービス連携は接続先ごとに `packages/integrations/<target>/` へ分離します。
 
-## 層と責務
+```text
+apps/
+  batch-playground/
+packages/
+  integrations/
+    discord/
+  libs/
+docs/
+```
 
-| 層 | 置くもの | 置かないもの |
-| --- | --- | --- |
-| `src/lambda-handler.ts` | Lambda 共通エントリポイント、開始/終了ログ | ジョブ選択条件、業務ロジック、外部連携詳細 |
-| `src/routing/` | `job` の取得、正規化、ジョブ名に対応する handler への解決 | 各ジョブの処理内容、メッセージ生成、外部 API 詳細 |
-| `src/jobs/` | イベント値の正規化、feature 呼び出し、integration 呼び出し、共通レスポンス作成 | ルーティング判定、内部処理の詳細、外部 API 詳細 |
-| `src/features/<concern>/` | 機能単位の処理、ドメイン寄りの値、integration 呼び出し | Lambda イベント解釈、バッチレスポンス作成 |
-| `src/integrations/<concern>/` | 外部サービス固有の型、HTTP 通信、外部 API エラー変換 | URL 解決、ジョブ判定、メッセージ生成 |
-| `src/shared/infra/` | Lambda など実行基盤に近い共通型・補助処理 | 個別 feature の値、外部サービス固有の型 |
-| `src/libs/<concern>/` | ドメイン非依存の純粋な汎用関数 | アプリ層、feature、shared、integration への依存 |
-| `src/local-runner.ts` | `.env` を使ったローカル起動 | 本番 Lambda 固有の制御、ジョブ内部処理 |
-| `sst.config.ts` | Lambda、EventBridge Scheduler、デプロイ設定 | バッチの業務ロジック、メッセージ生成、外部 API 詳細 |
+## Workspace
 
-## 関心ごとのディレクトリ
+- `apps/*`: デプロイ単位または実行単位のアプリ。
+- `packages/integrations/*`: 外部サービス接続先ごとの integration package。
+- `packages/libs`: ドメイン非依存の純粋な汎用処理を置く package。
 
-- `features/`、`integrations/`、`libs/` の直下には実装ファイルを置かず、必ず関心ごとのディレクトリを切る。
-- feature はバッチ名や業務機能名で切る。例: `src/features/uma-one-draw-topic/`
-- integration は外部サービス名で切る。例: `src/integrations/discord/`
-- libs は汎用関数の性質で切る。例: `src/libs/string/`
-- `index.ts` は作らない。責務が見えなくなるため、バレルファイルも禁止する。
-- ファイル名は責務が一目で分かる名前にする。例: `src/features/uma-one-draw-topic/topic-message.ts`
-- 設定値と処理は分ける。例: `topic-settings.ts` と `topic-message.ts`
-- 外部サービス内の具体クライアントも用途名のファイルにする。例: `src/integrations/discord/webhook.ts`
+将来的に複数 app で共有する業務関心が出た場合は、`packages/domain/` を追加できます。
+`packages/domain/` は複数 app で共有されるドメインモデル、ルール、ユースケース寄りの純粋処理を置く場所とし、特定 app の Lambda イベント、ルーティング、外部サービス client を持ちません。
 
 ## 依存方向
 
-`src/lambda-handler.ts` と `src/routing/` は入口層として `jobs` へ委譲します。
-ジョブ以下の依存は左から右へ流します。
+依存は app から package へ流します。
 
 ```text
-jobs -> features -> shared -> integrations -> libs
+apps/* -> packages/domain/* -> packages/libs
+apps/* -> packages/integrations/* -> packages/libs
+apps/* -> packages/libs
 ```
 
-- 右側の層から左側の層を import しない。
-- Lambda に関する型は `shared/infra` に置く。
-- 外部サービス固有の型は `integrations` に置く。
-- 現時点では `shared/domains` を作らない。ドメイン寄りの値は、まず利用する feature の近くに置く。
-- `src/shared` 直下には原則ファイルを置かない。
+- `packages/libs` から `apps/*`、`packages/domain/*`、`packages/integrations/*` を import しない。
+- `packages/domain/*` から `apps/*`、`packages/integrations/*` を import しない。
+- `packages/integrations/*` から `apps/*`、`packages/domain/*`、別の `packages/integrations/*` を import しない。
+- 外部サービス連携が必要な domain/libs の処理は、呼び出し側から関数や interface を渡す DI で表現する。
+
+## Feature 間依存
+
+- `apps/<app>/src/features/<feature-a>/` から `apps/<app>/src/features/<feature-b>/` を import しない。
+- feature 同士を組み合わせる必要がある場合は、`jobs/` など app の orchestration 層で行う。
+- 複数 feature で継続的に共有する純粋処理は `packages/libs`、複数 app で共有する業務関心は将来の `packages/domain` へ移す。
+
+## Docs
+
+- `docs/`: モノレポ全体の方針、共通ルール、CI/CD。
+- `apps/<app>/docs/`: app 固有の入口、ジョブ、feature、運用。
+- `packages/integrations/<target>/docs/`: 接続先固有の integration 設計。
+- `packages/libs/docs/`: 汎用処理 package の設計。
+
+## Package 方針
+
+- integration は接続先ごとに package を分ける。重い通信ライブラリや認証 SDK が接続先ごとに増えるため。
+- libs は 1 package とし、`packages/libs/src/` は作らない。`packages/libs/<lib-name>/` に実装を置く。
+- libs 内の `<lib-name>` は `string`、`date`、`array` など純粋処理の関心で切る。
+- 個別 lib に独立した依存や version 管理が必要になった場合だけ、独立 package へ切り出す。

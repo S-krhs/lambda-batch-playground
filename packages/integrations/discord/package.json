@@ -1,0 +1,19 @@
+{
+	"name": "@lambda-batch-playground/integration-discord",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		"./discord-webhook-client.js": {
+			"types": "./dist/discord-webhook-client.d.ts",
+			"default": "./dist/discord-webhook-client.js"
+		}
+	},
+	"scripts": {
+		"clean": "rm -rf dist",
+		"build": "npm run clean && tsc -p tsconfig.json",
+		"typecheck": "tsc -p tsconfig.json --noEmit",
+		"lint": "biome ci src docs package.json tsconfig.json",
+		"validate": "npm run typecheck && npm run lint"
+	}
+}

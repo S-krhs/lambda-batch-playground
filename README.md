@@ -1,9 +1,10 @@
 # Lambda Batch Playground
 
-Lambda イベントの `job` に応じてバッチジョブを実行する TypeScript 実装です。
+Lambda イベントの `job` に応じてバッチジョブを実行する TypeScript モノレポです。
 
 現在は UMA のワンドロのお題を Discord Webhook へ通知する `uma-one-draw-topic` ジョブを登録しています。
-SST で Lambda と EventBridge Scheduler をまとめてデプロイします。
+`apps/batch-playground` を SST で Lambda と EventBridge Scheduler としてデプロイします。
+外部サービス連携は `packages/integrations/*` に分離しています。
 
 ## 実行できるジョブ
 
@@ -61,10 +62,12 @@ BATCH_JOB=uma-one-draw-topic
 - `npm run build`
 - `npm run deploy`
 
+各コマンドは npm workspaces と Turbo 経由で実行します。
+
 ## デプロイ
 
 `.github/workflows/deploy.yml` では、`main` ブランチへの push で SST app をデプロイします。
-`sst.config.ts` は Lambda と UMA ワンドロお題通知用の EventBridge Scheduler を作成します。
+`sst.config.ts` は `apps/batch-playground/src/lambda-handler.ts` を handler とする Lambda と、UMA ワンドロお題通知用の EventBridge Scheduler を作成します。
 
 デフォルトのスケジュール:
 
@@ -89,3 +92,6 @@ BATCH_JOB=uma-one-draw-topic
 - アーキテクチャ: [docs/architecture.md](docs/architecture.md)
 - 実装ルール: [docs/implementation-rules.md](docs/implementation-rules.md)
 - CI/CD: [docs/ci-cd.md](docs/ci-cd.md)
+- Batch Playground: [apps/batch-playground/docs/architecture.md](apps/batch-playground/docs/architecture.md)
+- Discord integration: [packages/integrations/discord/docs/architecture.md](packages/integrations/discord/docs/architecture.md)
+- Libs: [packages/libs/docs/architecture.md](packages/libs/docs/architecture.md)
