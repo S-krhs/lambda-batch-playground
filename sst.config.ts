@@ -1,5 +1,7 @@
 /// <reference path="./.sst/platform/config.d.ts" />
 
+import { batchRoutes } from "./apps/batch-playground/src/shared/routes/batch-routes.js";
+
 // SST app と AWS リソース名の接頭辞として使うアプリ名
 const appName = "lambda-batch-playground";
 
@@ -40,7 +42,7 @@ export default $config({
 			timezone: "Asia/Tokyo",
 			retries: 0,
 			event: {
-				job: "uma-one-draw-topic",
+				job: batchRoutes.umaOneDrawTopic,
 				webhookUrl: umaOneDrawTopicWebhookUrl,
 			},
 		});

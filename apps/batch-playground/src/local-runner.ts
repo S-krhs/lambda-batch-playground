@@ -2,10 +2,11 @@
 // やらないこと: 本番 Lambda 固有の制御やジョブ内部の処理を持つ
 import { config } from "dotenv";
 import { handler } from "./lambda-handler.js";
+import { batchRoutes } from "./shared/routes/batch-routes.js";
 
 config();
 
-const job = process.env.BATCH_JOB ?? "uma-one-draw-topic";
+const job = process.env.BATCH_JOB ?? batchRoutes.umaOneDrawTopic;
 const webhookUrl =
 	process.env[
 		`${job.replaceAll("-", "_").toUpperCase()}_DISCORD_WEBHOOK_URL`

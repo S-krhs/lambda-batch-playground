@@ -2,6 +2,7 @@
 // やらないこと: 個別ジョブの処理内容や外部連携の詳細を持つ
 import { umaOneDrawTopicJobHandler } from "../jobs/uma-one-draw-topic.js";
 import type { BatchHandler, LambdaEvent } from "../shared/infra/lambda.js";
+import { batchRoutes } from "../shared/routes/batch-routes.js";
 
 /** Lambda イベントから実行対象のジョブ名を取得する。 */
 export const getJobName = (event: LambdaEvent): string => {
@@ -17,7 +18,7 @@ export const resolveBatchJob = (jobName: string): BatchHandler => {
 	const normalizedName = jobName.trim().toLowerCase();
 
 	switch (normalizedName) {
-		case "uma-one-draw-topic":
+		case batchRoutes.umaOneDrawTopic:
 			return umaOneDrawTopicJobHandler;
 		default:
 			throw new Error(`Unknown batch job: ${jobName}`);

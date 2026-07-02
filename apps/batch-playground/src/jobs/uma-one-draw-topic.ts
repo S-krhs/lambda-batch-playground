@@ -8,8 +8,7 @@ import type {
 	BatchResponse,
 	LambdaEvent,
 } from "../shared/infra/lambda.js";
-
-const BATCH_JOB_NAME = "uma-one-draw-topic";
+import { batchRoutes } from "../shared/routes/batch-routes.js";
 
 /** UMA ワンドロのお題を Discord へ通知するバッチジョブ。 */
 export const umaOneDrawTopicJobHandler: BatchHandler = async (
@@ -39,7 +38,7 @@ export const umaOneDrawTopicJobHandler: BatchHandler = async (
 	// 4. Lambda ハンドラーへ共通レスポンスを返す。
 	return {
 		ok: true,
-		job: BATCH_JOB_NAME,
+		job: batchRoutes.umaOneDrawTopic,
 		details: {
 			messageLength: message.content.length,
 		},
