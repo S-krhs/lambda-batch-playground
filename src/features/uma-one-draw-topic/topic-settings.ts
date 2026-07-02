@@ -3,8 +3,13 @@
 
 /** UMA ワンドロのお題候補。 */
 export const UMA_ONE_DRAW_TOPIC_NAMES = {
-	c: [] as string[],
-	r: [] as string[],
+	c: ["ホッコータルマエ"] as string[],
+	r: [
+		"ダイワスカーレット",
+		"アーモンドアイ",
+		"サトノダイヤモンド",
+		"ナリタトップロード",
+	] as string[],
 } as const;
 
 /** UMA ワンドロのお題メッセージテンプレート。 */
