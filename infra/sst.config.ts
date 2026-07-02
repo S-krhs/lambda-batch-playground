@@ -1,4 +1,4 @@
-/// <reference path="./.sst/platform/config.d.ts" />
+/// <reference path="../.sst/platform/config.d.ts" />
 
 // SST app と AWS リソース名の接頭辞として使うアプリ名
 const appName = "lambda-batch-playground";
@@ -15,7 +15,7 @@ export default $config({
 	},
 	async run() {
 		const { batchRoutes } = await import(
-			"./apps/batch-playground/src/shared/routes/batch-routes.js"
+			"../apps/batch-playground/src/shared/routes/batch-routes.js"
 		);
 
 		// Lambda バッチの共通エントリポイントを作成

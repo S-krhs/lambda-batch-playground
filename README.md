@@ -63,7 +63,7 @@ BATCH_JOB=uma-one-draw-topic
 ## デプロイ
 
 `.github/workflows/deploy.yml` では、`main` ブランチへの push で SST app をデプロイします。
-`sst.config.ts` は `apps/batch-playground/src/lambda-handler.ts` を handler とする Lambda と、UMA ワンドロお題通知用の EventBridge Scheduler を作成します。
+`infra/sst.config.ts` は `apps/batch-playground/src/lambda-handler.ts` を handler とする Lambda と、UMA ワンドロお題通知用の EventBridge Scheduler を作成します。
 
 デフォルトのスケジュール:
 

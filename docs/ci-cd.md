@@ -16,11 +16,11 @@
 6. `npm run deploy`
 
 `npm run typecheck` と `npm run lint` は Turbo 経由で workspace ごとに実行します。
-`npm run deploy` は workspace の build を実行してから `sst deploy --stage develop` を実行します。
+`npm run deploy` は workspace の build を実行してから `sst deploy --stage develop --config infra/sst.config.ts` を実行します。
 
 ## デプロイ対象
 
-SST は `sst.config.ts` から次のリソースを管理します。
+SST は `infra/sst.config.ts` から次のリソースを管理します。
 
 - Lambda function
 - EventBridge Scheduler
@@ -85,7 +85,7 @@ GitHub Actions で `Node.js xx is deprecated. The following actions target Node.
 ローカルで SST の構成確認をする場合:
 
 ```bash
-npx sst diff --stage develop
+npx sst diff --stage develop --config infra/sst.config.ts
 ```
 
 このコマンドは AWS credentials が必要です。
@@ -97,4 +97,4 @@ npx sst diff --stage develop
 - 新しい必須 env を追加した場合、GitHub Secrets と README を更新したか。
 - Scheduler の event payload が `apps/batch-playground/src/routing/batch-router.ts` の job 名と一致しているか。
 - `npm run validate` が通るか。
-- `npx sst diff --stage develop` で意図しない差分が出ていないか。
+- `npx sst diff --stage develop --config infra/sst.config.ts` で意図しない差分が出ていないか。

@@ -1,7 +1,7 @@
 # Batch Playground アーキテクチャ
 
 `apps/batch-playground` は、Lambda イベントの `job` に応じてバッチジョブを実行するアプリです。
-`sst.config.ts` が Lambda と EventBridge Scheduler を定義し、定期実行イベントから `job` を渡します。
+`infra/sst.config.ts` が Lambda と EventBridge Scheduler を定義し、定期実行イベントから `job` を渡します。
 
 ## 層と責務
 
