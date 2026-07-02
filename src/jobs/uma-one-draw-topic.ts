@@ -1,0 +1,55 @@
+// やること: UMA ワンドロのお題通知バッチをオーケストレーションする
+// やらないこと: お題メッセージ生成や Discord Webhook HTTP 通信の詳細を持つ
+import { buildUmaOneDrawTopicMessage } from "../features/uma-one-draw-topic/topic-message.js";
+import { DiscordWebhookClient } from "../integrations/discord/discord-webhook-client.js";
+import type {
+	BatchHandler,
+	BatchResponse,
+	LambdaEvent,
+} from "../shared/infra/lambda.js";
+
+const BATCH_JOB_NAME = "uma-one-draw-topic";
+const NOT_SET = "NOT_SET";
+
+const resolveWebhookUrl = (event: LambdaEvent): string | undefined => {
+	const webhookUrl =
+		typeof event.webhookUrl === "string" && event.webhookUrl.trim()
+			? event.webhookUrl.trim()
+			: process.env.DISCORD_WEBHOOK_URL?.trim();
+
+	return webhookUrl && webhookUrl !== NOT_SET ? webhookUrl : undefined;
+};
+
+/** UMA ワンドロのお題を Discord へ通知するバッチジョブ。 */
+export const umaOneDrawTopicJobHandler: BatchHandler = async (
+	event: LambdaEvent,
+): Promise<BatchResponse> => {
+	// 1. イベントから送信先 Discord Webhook URL を取得する。
+	const webhookUrl = resolveWebhookUrl(event);
+
+	if (!webhookUrl) {
+		throw new Error("webhookUrl が設定されていません");
+	}
+
+	console.log("UMA ワンドロお題通知 送信開始", {
+		hasWebhookUrl: true,
+	});
+
+	// 2. feature で UMA ワンドロのお題メッセージを生成する。
+	const message = buildUmaOneDrawTopicMessage();
+
+	// 3. Discord Webhook integration へ送信を委譲する。
+	const webhookClient = new DiscordWebhookClient(webhookUrl);
+	await webhookClient.postMessage(message.content);
+
+	console.log("UMA ワンドロお題通知 送信完了");
+
+	// 4. Lambda ハンドラーへ共通レスポンスを返す。
+	return {
+		ok: true,
+		job: BATCH_JOB_NAME,
+		details: {
+			messageLength: message.content.length,
+		},
+	};
+};

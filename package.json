@@ -1,0 +1,27 @@
+{
+	"name": "lambda-batch-playground",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"clean": "rm -rf dist function.zip",
+		"build": "npm run clean && tsc -p tsconfig.json",
+		"deploy": "sst deploy --stage production",
+		"local": "node --loader ts-node/esm src/local-runner.ts",
+		"typecheck": "tsc -p tsconfig.json --noEmit",
+		"lint": "biome ci src docs README.md package.json tsconfig.json sst.config.ts .github",
+		"format": "biome format src docs README.md package.json tsconfig.json sst.config.ts .github",
+		"format:fix": "biome format --write src docs README.md package.json tsconfig.json sst.config.ts .github",
+		"validate": "npm run typecheck && npm run lint"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.2",
+		"@types/node": "^26.1.0",
+		"sst": "^4.17.0",
+		"typescript": "^5.5.4"
+	},
+	"dependencies": {
+		"dotenv": "^17.4.2",
+		"ts-node": "^10.9.2"
+	}
+}
