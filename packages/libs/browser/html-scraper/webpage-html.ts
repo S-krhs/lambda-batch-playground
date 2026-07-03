@@ -20,7 +20,8 @@ export const fetchWebpageHtml = async (
 	try {
 		const page = await browser.newPage(options.pageOptions);
 		await page.goto(url);
-		return page.content();
+		const content = await page.content();
+		return content;
 	} finally {
 		await browser.close();
 	}
