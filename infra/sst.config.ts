@@ -4,13 +4,12 @@
 const appName = "lambda-batch-playground";
 
 export default $config({
-	// デプロイ stage に応じた SST app の基本設定
-	app(input) {
+	// SST app の基本設定。デプロイ先は develop stage 固定。
+	app() {
 		return {
 			name: appName,
 			home: "aws",
-			removal: input?.stage === "production" ? "retain" : "remove",
-			protect: input?.stage === "production",
+			removal: "remove",
 		};
 	},
 	async run() {
@@ -67,7 +66,7 @@ export default $config({
 			"BrowserRuntimeLayerAssetBucket",
 			{
 				bucketPrefix: `sst-asset-lbp-${$app.stage}-br-`,
-				forceDestroy: $app.stage !== "production",
+				forceDestroy: true,
 			},
 		);
 		new aws.s3.BucketPublicAccessBlock(
