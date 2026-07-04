@@ -14,10 +14,10 @@ export default $config({
 		};
 	},
 	async run() {
-		const { batchRoutes } = await import(
-			"../apps/batch-playground/src/shared/routes/batch-routes.js"
+		const { batchNames: playgroundBatchNames } = await import(
+			"../apps/batch-playground/src/shared/routes/batch-names.js"
 		);
-		const { batchNames } = await import(
+		const { batchNames: animeBatchNames } = await import(
 			"../apps/batch-anime-analysis/src/shared/routes/batch-names.js"
 		);
 
@@ -28,7 +28,7 @@ export default $config({
 
 		// Lambda バッチの共通エントリポイントを作成
 		const batchFunction = new sst.aws.Function("BatchFunction", {
-			handler: "../apps/batch-playground/src/lambda-handler.handler",
+			handler: "../apps/batch-playground/src/handlers/batch.handler",
 			runtime: "nodejs22.x",
 			timeout: "30 seconds",
 			memory: "128 MB",
@@ -42,7 +42,7 @@ export default $config({
 			timezone: "Asia/Tokyo",
 			retries: 0,
 			event: {
-				job: batchRoutes.umaOneDrawTopic,
+				job: playgroundBatchNames.umaOneDrawTopic,
 			},
 		});
 
@@ -154,7 +154,7 @@ export default $config({
 			timezone: "Asia/Tokyo",
 			retries: 0,
 			event: {
-				job: batchNames.animeScrapingOrchestrator,
+				job: animeBatchNames.animeScrapingOrchestrator,
 			},
 		});
 
