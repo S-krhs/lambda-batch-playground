@@ -67,7 +67,7 @@ export default $config({
 		const browserRuntimeLayer = new aws.lambda.LayerVersion(
 			"BrowserRuntimeLayer",
 			{
-				code: $asset(".tmp/layers/browser-runtime"),
+				code: $asset("../.tmp/layers/browser-runtime"),
 				compatibleArchitectures: ["x86_64"],
 				compatibleRuntimes: ["nodejs22.x"],
 				description:
