@@ -183,5 +183,99 @@ export default $config({
 				},
 			},
 		);
+
+		// バッチ失敗を通知するためのアラート用 Discord Webhook URL を Secret として扱う
+		const alertDiscordWebhookUrl = new sst.Secret("AlertDiscordWebhook");
+
+		// CloudWatch alarm を受けて Discord へ通知する Notifier Lambda を作成
+		const alertNotifierFunction = new sst.aws.Function(
+			"AlertNotifierFunction",
+			{
+				handler:
+					"../apps/batch-anime-analysis/src/handlers/alarm-notifier.handler",
+				runtime: "nodejs22.x",
+				timeout: "30 seconds",
+				memory: "128 MB",
+				link: [alertDiscordWebhookUrl],
+			},
+		);
+
+		// CloudWatch alarm の通知先となる SNS Topic を作り Notifier Lambda を購読させる
+		const alertTopic = new aws.sns.Topic("AlertTopic", {
+			name: `${appName}-${$app.stage}-alerts`,
+		});
+		const alertNotifierInvokePermission = new aws.lambda.Permission(
+			"AlertNotifierInvokePermission",
+			{
+				action: "lambda:InvokeFunction",
+				function: alertNotifierFunction.name,
+				principal: "sns.amazonaws.com",
+				sourceArn: alertTopic.arn,
+			},
+		);
+		new aws.sns.TopicSubscription(
+			"AlertTopicSubscription",
+			{
+				topic: alertTopic.arn,
+				protocol: "lambda",
+				endpoint: alertNotifierFunction.arn,
+			},
+			{ dependsOn: [alertNotifierInvokePermission] },
+		);
+
+		// worker が規定回数リトライしても失敗し DLQ にメッセージが滞留したら通知する
+		new aws.cloudwatch.MetricAlarm("AnimeAnalysisDlqDepthAlarm", {
+			name: `${appName}-${$app.stage}-anime-dlq-depth`,
+			alarmDescription:
+				"アニメ分析 worker が失敗し DLQ にメッセージが滞留している",
+			namespace: "AWS/SQS",
+			metricName: "ApproximateNumberOfMessagesVisible",
+			dimensions: {
+				QueueName: animeAnalysisDeadLetterQueue.arn.apply((arn) => {
+					return arn.split(":").pop() ?? "";
+				}),
+			},
+			statistic: "Maximum",
+			period: 300,
+			evaluationPeriods: 1,
+			threshold: 1,
+			comparisonOperator: "GreaterThanOrEqualToThreshold",
+			treatMissingData: "notBreaching",
+			alarmActions: [alertTopic.arn],
+		});
+
+		// DLQ を持たない schedule 起動 Lambda（orchestrator / uma）のエラーを通知する
+		new aws.cloudwatch.MetricAlarm("AnimeAnalysisOrchestratorErrorAlarm", {
+			name: `${appName}-${$app.stage}-anime-orchestrator-errors`,
+			alarmDescription: "アニメ分析 orchestrator の実行が失敗した",
+			namespace: "AWS/Lambda",
+			metricName: "Errors",
+			dimensions: {
+				FunctionName: animeAnalysisOrchestratorFunction.name,
+			},
+			statistic: "Sum",
+			period: 300,
+			evaluationPeriods: 1,
+			threshold: 1,
+			comparisonOperator: "GreaterThanOrEqualToThreshold",
+			treatMissingData: "notBreaching",
+			alarmActions: [alertTopic.arn],
+		});
+		new aws.cloudwatch.MetricAlarm("UmaOneDrawTopicErrorAlarm", {
+			name: `${appName}-${$app.stage}-uma-one-draw-topic-errors`,
+			alarmDescription: "UMA ワンドロお題通知の実行が失敗した",
+			namespace: "AWS/Lambda",
+			metricName: "Errors",
+			dimensions: {
+				FunctionName: batchFunction.name,
+			},
+			statistic: "Sum",
+			period: 300,
+			evaluationPeriods: 1,
+			threshold: 1,
+			comparisonOperator: "GreaterThanOrEqualToThreshold",
+			treatMissingData: "notBreaching",
+			alarmActions: [alertTopic.arn],
+		});
 	},
 });

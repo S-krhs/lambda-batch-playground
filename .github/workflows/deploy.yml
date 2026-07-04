@@ -39,3 +39,4 @@ jobs:
         env:
           SST_SECRET_UmaOneDrawTopicDiscordWebhook: ${{ secrets.UMA_ONE_DRAW_TOPIC_DISCORD_WEBHOOK_URL }}
           SST_SECRET_AnimeAnalysisDiscordWebhook: ${{ secrets.ANIME_ANALYSIS_DISCORD_WEBHOOK_URL }}
+          SST_SECRET_AlertDiscordWebhook: ${{ secrets.ALERT_DISCORD_WEBHOOK_URL }}
