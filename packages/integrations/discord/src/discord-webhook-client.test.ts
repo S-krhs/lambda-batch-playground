@@ -65,8 +65,9 @@ describe("DiscordWebhookClient", () => {
 		});
 
 		expect(error).toBeInstanceOf(DiscordWebhookError);
-		expect(error.message).toBe("Discord Webhook 応答が失敗しました: 400");
-		expect(error.message).not.toContain("super-secret-token");
+		const errorMessage = (error as DiscordWebhookError).message;
+		expect(errorMessage).toBe("Discord Webhook 応答が失敗しました: 400");
+		expect(errorMessage).not.toContain("super-secret-token");
 
 		const details = (error as DiscordWebhookError)
 			.responseDetails as DiscordWebhookResponseDetails;
