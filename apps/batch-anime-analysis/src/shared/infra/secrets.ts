@@ -12,6 +12,11 @@ export interface DataSourceSettings {
 	discordWebhookUrl: string;
 }
 
+/** アラート通知 handler が使う実行時設定。 */
+export interface AlertSettings {
+	discordWebhookUrl: string;
+}
+
 /** Orchestrator handler が使う実行時設定を取得する。 */
 export const getOrchestratorSettings = (): OrchestratorSettings => {
 	let linkedQueueUrl = "";
@@ -58,6 +63,36 @@ export const getDataSourceSettings = (): DataSourceSettings => {
 	if (!discordWebhookUrl) {
 		throw new Error(
 			"AnimeAnalysisDiscordWebhook secret またはローカル用 Discord Webhook URL が設定されていません。",
+		);
+	}
+
+	return {
+		discordWebhookUrl,
+	};
+};
+
+/** アラート通知 handler が使う実行時設定を取得する。 */
+export const getAlertSettings = (): AlertSettings => {
+	let linkedDiscordWebhookUrl = "";
+
+	try {
+		const resources = Resource as unknown as Record<string, { value?: string }>;
+		linkedDiscordWebhookUrl =
+			resources.AlertDiscordWebhook?.value?.trim() ?? "";
+	} catch {
+		linkedDiscordWebhookUrl = "";
+	}
+
+	const localDiscordWebhookUrl = (
+		process.env.ALERT_DISCORD_WEBHOOK_URL ||
+		process.env.DEFAULT_DISCORD_WEBHOOK_URL ||
+		""
+	).trim();
+	const discordWebhookUrl = linkedDiscordWebhookUrl || localDiscordWebhookUrl;
+
+	if (!discordWebhookUrl) {
+		throw new Error(
+			"AlertDiscordWebhook secret またはローカル用アラート Discord Webhook URL が設定されていません。",
 		);
 	}
 

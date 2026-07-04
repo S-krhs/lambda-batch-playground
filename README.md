@@ -31,6 +31,7 @@ Lambda イベントの `job` に応じてバッチジョブを実行する TypeS
 - `AWS_ROLE_ARN`
 - `UMA_ONE_DRAW_TOPIC_DISCORD_WEBHOOK_URL`
 - `ANIME_ANALYSIS_DISCORD_WEBHOOK_URL`
+- `ALERT_DISCORD_WEBHOOK_URL`
 
 アプリやジョブ固有のシークレットは、各 app の README を参照してください。
 
@@ -41,5 +42,8 @@ Lambda イベントの `job` に応じてバッチジョブを実行する TypeS
 - CI/CD: [docs/ci-cd.md](docs/ci-cd.md)
 - Batch Playground app: [apps/batch-playground/README.md](apps/batch-playground/README.md)
 - Batch Playground architecture: [apps/batch-playground/docs/architecture.md](apps/batch-playground/docs/architecture.md)
-- Discord integration: [packages/integrations/discord/docs/architecture.md](packages/integrations/discord/docs/architecture.md)
-- Libs: [packages/libs/docs/architecture.md](packages/libs/docs/architecture.md)
+- Batch Anime Analysis app: [apps/batch-anime-analysis/README.md](apps/batch-anime-analysis/README.md)
+- Batch Anime Analysis architecture: [apps/batch-anime-analysis/docs/architecture.md](apps/batch-anime-analysis/docs/architecture.md)
+- Discord integration: [packages/integrations/discord/README.md](packages/integrations/discord/README.md)
+- Libs: [packages/libs/README.md](packages/libs/README.md)
+- Repositories: [repositories/README.md](repositories/README.md)

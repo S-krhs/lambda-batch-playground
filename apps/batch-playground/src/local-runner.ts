@@ -3,7 +3,7 @@
 import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
 
-import { handler } from "./lambda-handler.js";
+import { handler } from "./handlers/batch.js";
 
 const envPath = fileURLToPath(new URL("../.env", import.meta.url));
 config({

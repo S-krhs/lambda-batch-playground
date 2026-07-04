@@ -17,7 +17,7 @@
 		"build": "npm run clean && tsc -p tsconfig.json",
 		"test": "vitest run",
 		"typecheck": "tsc -p tsconfig.json --noEmit",
-		"lint": "biome ci src docs package.json tsconfig.json",
+		"lint": "biome ci README.md src docs package.json tsconfig.json",
 		"validate": "npm run typecheck && npm run lint"
 	}
 }

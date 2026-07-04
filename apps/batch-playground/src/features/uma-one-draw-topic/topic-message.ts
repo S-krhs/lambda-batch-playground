@@ -2,32 +2,32 @@
 // Out of scope: Discord payload 生成、外部送信、Lambda レスポンス作成を行う
 import { GachaPool } from "@lambda-batch-playground/libs/gacha/gacha-pool.js";
 import {
-	UMA_ONE_DRAW_TOPIC_ENTRIES,
-	UMA_ONE_DRAW_TOPIC_MESSAGE_TEMPLATE,
-	UMA_ONE_DRAW_TOPIC_RARITIES,
-	UMA_ONE_DRAW_TOPIC_RARITY_WEIGHTS,
-	type UmaOneDrawTopicEntry,
+	TOPIC_ENTRIES,
+	TOPIC_MESSAGE_TEMPLATE,
+	TOPIC_RARITIES,
+	TOPIC_RARITY_WEIGHTS,
+	type TopicEntry,
 } from "./topic-settings.js";
 
 /** UMA ワンドロのお題メッセージ。 */
-export interface UmaOneDrawTopicMessage {
+export interface TopicMessage {
 	content: string;
 }
 
 const selectTopicName = (): string => {
-	const gacha = new GachaPool<UmaOneDrawTopicEntry>({
-		rarities: UMA_ONE_DRAW_TOPIC_RARITIES,
-		rarityWeights: UMA_ONE_DRAW_TOPIC_RARITY_WEIGHTS,
+	const gacha = new GachaPool<TopicEntry>({
+		rarities: TOPIC_RARITIES,
+		rarityWeights: TOPIC_RARITY_WEIGHTS,
 	});
 
-	gacha.addEntries(UMA_ONE_DRAW_TOPIC_ENTRIES);
+	gacha.addEntries(TOPIC_ENTRIES);
 
 	return gacha.draw().name;
 };
 
 /** UMA ワンドロのお題通知に使うメッセージ本文を生成する。 */
-export const buildUmaOneDrawTopicMessage = (): UmaOneDrawTopicMessage => {
-	const messageTemplate = UMA_ONE_DRAW_TOPIC_MESSAGE_TEMPLATE;
+export const buildTopicMessage = (): TopicMessage => {
+	const messageTemplate = TOPIC_MESSAGE_TEMPLATE;
 	const selectedName = selectTopicName();
 
 	if (!selectedName || !messageTemplate) {

@@ -7,7 +7,7 @@
 
 | 層 | 置くもの | 置かないもの |
 | --- | --- | --- |
-| `src/lambda-handler.ts` | Lambda 共通エントリポイント、開始/終了ログ | ジョブ選択条件、業務ロジック、外部連携詳細 |
+| `src/handlers/batch.ts` | Lambda 共通エントリポイント、開始/終了ログ | ジョブ選択条件、業務ロジック、外部連携詳細 |
 | `src/routing/` | `job` の取得、正規化、ジョブ名に対応する handler への解決 | 各ジョブの処理内容、メッセージ生成、外部 API 詳細 |
 | `src/jobs/` | イベント値の正規化、feature 呼び出し、integration 呼び出し、共通レスポンス作成 | ルーティング判定、内部処理の詳細、外部 API 詳細 |
 | `src/features/<concern>/` | 機能単位の処理、ドメイン寄りの値 | Lambda イベント解釈、バッチレスポンス作成、別 feature の実装 |
@@ -17,7 +17,7 @@
 ## 依存方向
 
 ```text
-lambda-handler -> routing -> jobs -> features
+batch -> routing -> jobs -> features
 jobs -> packages/integrations/*
 jobs/features -> packages/libs
 ```

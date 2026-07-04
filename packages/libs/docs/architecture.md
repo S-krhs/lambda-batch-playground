@@ -10,6 +10,9 @@ packages/libs/
     gacha/
       gacha-pool.ts
       gacha-pool.test.ts
+    logger/
+      batch-logger.ts
+      batch-logger.test.ts
     string/
       text-sanitizer.ts
       text-sanitizer.test.ts

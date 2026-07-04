@@ -42,3 +42,17 @@ export interface SqsBatchResponse {
 export type SqsBatchHandler = (
 	event: SqsBatchEvent,
 ) => Promise<SqsBatchResponse>;
+
+/** SNS 経由で受け取る 1 record。CloudWatch alarm 通知などに使う。 */
+export interface SnsEventRecord {
+	Sns: {
+		Message: string;
+		Subject?: string;
+		Timestamp?: string;
+	};
+}
+
+/** SNS event。CloudWatch alarm を Lambda で受ける際に使う。 */
+export interface SnsEvent {
+	Records: SnsEventRecord[];
+}
