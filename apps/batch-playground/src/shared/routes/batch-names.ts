@@ -6,6 +6,8 @@ export const batchNames = {
 	umaOneDrawTopic: "uma-one-draw-topic",
 } as const;
 
+/** サポートする job 名の union 型。 */
 export type BatchName = (typeof batchNames)[keyof typeof batchNames];
 
+/** サポートする job 名の一覧。ルーティング時の検証に使う。 */
 export const batchNameList = Object.values(batchNames);

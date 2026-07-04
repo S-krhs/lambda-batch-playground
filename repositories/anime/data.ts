@@ -1,3 +1,5 @@
+// In scope: アニメ指標スクレイピング対象の静的カタログを定義する
+// Out of scope: 定義の読み込み、スクレイピング実行、parser 入力変換、外部通知を行う
 import type {
 	AnimeApiMetricSource,
 	AnimeMetricDataSource,

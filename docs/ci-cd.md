@@ -26,7 +26,9 @@ SST は `infra/sst.config.ts` から次のリソースを管理します。
 - Lambda function
 - EventBridge Scheduler
 - SQS Queue / DLQ
-- Scheduler と SQS 連携に必要な IAM resource
+- 失敗検知用の SNS Topic と CloudWatch alarm（DLQ 滞留、Orchestrator エラー）
+- browser runtime Lambda Layer と、その archive を置く S3 asset bucket
+- Scheduler、SQS、SNS 連携に必要な IAM resource
 
 各 app/job の Scheduler event payload と secret は、該当 app の README を参照します。
 
@@ -38,7 +40,9 @@ SST は `infra/sst.config.ts` から次のリソースを管理します。
 - `AWS_ROLE_ARN`
 - `UMA_ONE_DRAW_TOPIC_DISCORD_WEBHOOK_URL`
 - `ANIME_ANALYSIS_DISCORD_WEBHOOK_URL`
+- `ALERT_DISCORD_WEBHOOK_URL`
 
+これらは deploy job で `SST_SECRET_*` env として SST secret に渡します。
 app/job 固有の GitHub Actions Secrets は、該当 app の README を参照します。
 
 アニメ分析 worker は、Playwright / Chromium 実行に必要な runtime 依存を `infra/layers/browser-runtime` から Lambda Layer として発行して参照します。
