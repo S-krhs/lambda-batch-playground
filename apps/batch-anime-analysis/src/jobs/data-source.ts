@@ -6,22 +6,25 @@ import { dataSourceRepository } from "@lambda-batch-playground/repositories/anim
 import { buildScrapingReport } from "../features/notifications/scraping-report.js";
 import { getApiMetrics } from "../features/scrape-api/get-metrics.js";
 import { getWebpageMetrics } from "../features/scrape-webpage/get-metrics.js";
-import type {
-	SqsBatchHandler,
-	SqsBatchItemFailure,
-} from "../shared/infra/lambda.js";
-import { getDataSourceSettings } from "../shared/infra/secrets.js";
 import { batchNames } from "../shared/routes/batch-names.js";
-import { dataSourceMessageSchema } from "../shared/schemas/queue-messages/data-source-message.js";
+import { sqsWorkerEventSchema } from "../shared/schemas/lambda/sqs-worker/event.js";
+import type { SqsWorkerResponse } from "../shared/schemas/lambda/sqs-worker/response.js";
+import { dataSourceMessageSchema } from "../shared/schemas/sqs/data-source/message.js";
+import { getDataSourceSettings } from "./runtime-settings/data-source-setting-resolver.js";
 
 const logger = createBatchLogger(batchNames.animeScrapingDataSource);
 
 /** SQS message を dataSource 単位のアニメスクレイピングとして処理する。 */
-export const dataSourceJob: SqsBatchHandler = async (event) => {
-	const batchItemFailures: SqsBatchItemFailure[] = [];
+export const dataSourceJob = async (
+	event: unknown,
+): Promise<SqsWorkerResponse> => {
+	// 起動イベント全体を worker の入力として検証し、処理する record を取り出す。
+	const { Records } = sqsWorkerEventSchema.parse(event);
+
+	const batchItemFailures: SqsWorkerResponse["batchItemFailures"] = [];
 	let discordWebhookClient: DiscordWebhookClient | undefined;
 
-	for (const record of event.Records) {
+	for (const record of Records) {
 		const { messageId } = record;
 
 		try {

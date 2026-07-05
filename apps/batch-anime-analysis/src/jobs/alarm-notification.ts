@@ -3,21 +3,24 @@
 import { DiscordWebhookClient } from "@lambda-batch-playground/integration-discord/discord-webhook-client.js";
 import { createBatchLogger } from "@lambda-batch-playground/libs/logger/batch-logger.js";
 import { buildAlarmReport } from "../features/notifications/alarm-report.js";
-import type { SnsEvent } from "../shared/infra/lambda.js";
-import { getAlertSettings } from "../shared/infra/secrets.js";
+import { alarmNotifierEventSchema } from "../shared/schemas/lambda/alarm-notifier/event.js";
+import { getAlertSettings } from "./runtime-settings/alert-setting-resolver.js";
 
 const logger = createBatchLogger("alarm-notification");
 
 /** SNS event に含まれる CloudWatch alarm を Discord へ通知する。 */
-export const alarmNotificationJob = async (event: SnsEvent): Promise<void> => {
-	logger.start({ recordCount: event.Records.length });
+export const alarmNotificationJob = async (event: unknown): Promise<void> => {
+	// 起動イベント全体を通知 job の入力として検証し、処理する record を取り出す。
+	const { Records } = alarmNotifierEventSchema.parse(event);
+
+	logger.start({ recordCount: Records.length });
 
 	const { discordWebhookUrl } = getAlertSettings();
 	const client = new DiscordWebhookClient(discordWebhookUrl);
 
-	for (const record of event.Records) {
+	for (const record of Records) {
 		await client.postMessage(buildAlarmReport(record.Sns.Message));
 	}
 
-	logger.complete({ recordCount: event.Records.length });
+	logger.complete({ recordCount: Records.length });
 };

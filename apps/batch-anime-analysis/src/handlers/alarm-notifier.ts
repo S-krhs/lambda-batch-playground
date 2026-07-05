@@ -2,12 +2,11 @@
 // Out of scope: 通知文生成、Webhook URL 解決、送信処理の詳細を持つ
 import { createBatchLogger } from "@lambda-batch-playground/libs/logger/batch-logger.js";
 import { alarmNotificationJob } from "../jobs/alarm-notification.js";
-import type { SnsEvent } from "../shared/infra/lambda.js";
 
 const logger = createBatchLogger("alarm-notifier");
 
 /** CloudWatch alarm を Discord へ通知する Lambda のエントリポイント。 */
-export const handler = async (event: SnsEvent): Promise<void> => {
+export const handler = async (event: unknown): Promise<void> => {
 	// 通知自体の失敗で SNS 再試行を誘発しないよう、ログに留めて握り潰す。
 	try {
 		await alarmNotificationJob(event);

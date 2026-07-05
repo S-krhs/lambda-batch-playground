@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dataSourceMessageSchema } from "./data-source-message.js";
+import { dataSourceMessageSchema } from "./message.js";
 
 describe("dataSourceMessageSchema", () => {
 	it("worker message を検証して正規化する", () => {

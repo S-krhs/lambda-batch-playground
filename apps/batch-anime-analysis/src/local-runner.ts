@@ -5,7 +5,7 @@ import { createBatchLogger } from "@lambda-batch-playground/libs/logger/batch-lo
 import { dataSourceRepository } from "@lambda-batch-playground/repositories/anime/data-source.repository.js";
 import { config } from "dotenv";
 import { handler } from "./handlers/sqs-worker.js";
-import type { SqsBatchEvent } from "./shared/infra/lambda.js";
+import type { SqsWorkerEvent } from "./shared/schemas/lambda/sqs-worker/event.js";
 
 const envPath = fileURLToPath(new URL("../.env", import.meta.url));
 config({
@@ -31,7 +31,7 @@ const dataSourceIds =
 			});
 
 // orchestrator を介さず、worker が受け取る形の SQS event を組み立てる。
-const event: SqsBatchEvent = {
+const event: SqsWorkerEvent = {
 	Records: dataSourceIds.map((dataSourceId, index) => {
 		return {
 			messageId: `local-message-${index}`,

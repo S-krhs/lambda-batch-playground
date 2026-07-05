@@ -6,7 +6,7 @@
 ## ジョブ実装
 
 - ジョブ名は実行内容が分かるバッチ名にする。例: `anime-scraping-data-source`
-- ジョブ handler はイベント値の正規化、feature 呼び出し、integration 呼び出し、共通レスポンス作成に集中する。
+- ジョブ handler はイベント値の正規化、feature 呼び出し、integration 呼び出し、レスポンス作成に集中する。
 - `jobs/` には実行単位のオーケストレーションを置き、message body の生成、検証などの機能単位は `features/` に置く。
 - オーケストレーション手順は、処理セクションごとに 1 行コメントを残す。
 - 新しいジョブを追加したら、app `README.md` の実行できるジョブと環境変数を更新する。
@@ -15,8 +15,8 @@
 
 - Orchestrator Lambda は実行対象の決定と SQS 投入に集中し、スクレイピングを直接実行しない。
 - Worker Lambda handler は SQS event を dataSource スクレイピング job へ渡すだけにし、message body の解釈や業務処理を持たない。
-- SQS message body の生成、検証は `src/shared/schemas/queue-messages/data-source-message.ts` に集約する。
-- SQS 送信は `src/shared/infra/sqs.ts` に置き、queue URL 解決は handler ごとの設定解決として `src/shared/infra/secrets.ts` に置く。
+- SQS message body の生成、検証は `src/shared/schemas/sqs/data-source/message.ts` に集約する。
+- SQS 送信は integration package `@lambda-batch-playground/integration-sqs` に委譲し、queue URL 解決は job ごとの設定解決として `src/jobs/runtime-settings/orchestrator-setting-resolver.ts` に置く。
 - dataSource スクレイピング job は SQS event 内の record を処理し、partial batch response で失敗 message だけを再試行対象にする。
 
 ## アラート通知
@@ -24,13 +24,14 @@
 - バッチ失敗の通知は、CloudWatch alarm を SNS 経由で受ける Notifier Lambda が扱う。
 - SNS event の解釈と通知失敗の握り潰しは `src/handlers/alarm-notifier.ts` に置く。通知自体の失敗で SNS 再試行を誘発しないよう、ログに留めて握り潰す。
 - 通知文生成は `src/features/notifications/alarm-report.ts`、送信の組み立ては `src/jobs/alarm-notification.ts` に置く。
-- アラート用 Webhook URL の解決は handler ごとの設定解決として `src/shared/infra/secrets.ts` に置く。
+- アラート用 Webhook URL の解決は job ごとの設定解決として `src/jobs/runtime-settings/alert-setting-resolver.ts` に置く。
 
 ## 入力・レスポンス・ログ
 
-- `LambdaEvent` は外部入力として扱い、使う直前に型チェック、trim、正規化を行う。
+- 起動イベントは `unknown` として受け取り、job で使う直前に schema で検証・正規化する。
 - repository 由来の入力は repository 境界で検証し、app 内では camelCase の型として扱う。
-- レスポンスは `BatchResponse` に合わせ、呼び出し元が機械的に扱える形にする。
+- 各 Lambda のレスポンスは handler ごとの応答型（例: `OrchestratorResponse`）に合わせ、呼び出し元が機械的に扱える形にする。
+- 境界データの型・契約は `src/shared/schemas/` に置く（Lambda handler は `lambda/<handler>/event.ts`・`response.ts`、SQS message は `sqs/<message>/message.ts`）。実行時設定の型と解決は `src/jobs/runtime-settings/`、外部システムと話す実装（SQS 送信など）は `packages/integrations/*` に置く。
 - `details` には調査に役立つ安全な情報だけを入れる。
 - URL や Discord Webhook URL をログやレスポンスに出さない。
 - 設定不足、入力不備、外部 API 失敗はエラーメッセージで区別できるようにする。
