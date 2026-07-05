@@ -1,8 +1,8 @@
 // In scope: SQS event から dataSource 単位のアニメスクレイピングを実行する
 // Out of scope: Lambda エントリポイント、SQS message の構築、個別 parser の詳細を持つ
-import { DiscordWebhookClient } from "@lambda-batch-playground/integration-discord/discord-webhook-client.js";
-import { createBatchLogger } from "@lambda-batch-playground/libs/logger/batch-logger.js";
-import { dataSourceRepository } from "@lambda-batch-playground/repositories/anime/data-source.repository.js";
+import { DiscordWebhookClient } from "@eskra-aws-playground/integration-discord/discord-webhook-client.js";
+import { createBatchLogger } from "@eskra-aws-playground/libs/logger/batch-logger.js";
+import { dataSourceRepository } from "@eskra-aws-playground/repositories/anime/data-source.repository.js";
 import { buildScrapingReport } from "../features/notifications/scraping-report.js";
 import { getApiMetrics } from "../features/scrape-api/get-metrics.js";
 import { getWebpageMetrics } from "../features/scrape-webpage/get-metrics.js";

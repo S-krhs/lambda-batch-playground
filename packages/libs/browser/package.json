@@ -1,5 +1,5 @@
 {
-	"name": "@lambda-batch-playground/libs-browser",
+	"name": "@eskra-aws-playground/libs-browser",
 	"version": "0.1.0",
 	"private": true,
 	"type": "module",

@@ -1,5 +1,5 @@
 {
-	"name": "@lambda-batch-playground/browser-runtime-layer",
+	"name": "@eskra-aws-playground/browser-runtime-layer",
 	"version": "0.1.0",
 	"private": true,
 	"type": "module",

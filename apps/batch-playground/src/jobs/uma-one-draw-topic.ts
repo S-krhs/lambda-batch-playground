@@ -1,6 +1,6 @@
 // In scope: UMA ワンドロのお題通知バッチをオーケストレーションする
 // Out of scope: お題メッセージ生成や Discord Webhook HTTP 通信の詳細を持つ
-import { DiscordWebhookClient } from "@lambda-batch-playground/integration-discord/discord-webhook-client.js";
+import { DiscordWebhookClient } from "@eskra-aws-playground/integration-discord/discord-webhook-client.js";
 
 import { buildTopicMessage } from "../features/uma-one-draw-topic/topic-message.js";
 import type {

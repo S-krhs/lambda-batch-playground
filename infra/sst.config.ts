@@ -1,7 +1,7 @@
 /// <reference path=".sst/platform/config.d.ts" />
 
 // SST app と AWS リソース名の接頭辞として使うアプリ名
-const appName = "lambda-batch-playground";
+const appName = "eskra-aws-playground";
 
 export default $config({
 	// SST app の基本設定。デプロイ先は develop stage 固定。

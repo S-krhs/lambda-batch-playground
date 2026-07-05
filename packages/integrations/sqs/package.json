@@ -1,5 +1,5 @@
 {
-	"name": "@lambda-batch-playground/integration-sqs",
+	"name": "@eskra-aws-playground/integration-sqs",
 	"version": "0.1.0",
 	"private": true,
 	"type": "module",
