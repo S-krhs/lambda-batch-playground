@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { orchestratorEventSchema } from "./orchestrator-event.js";
+import { orchestratorEventSchema } from "./event.js";
 
 describe("orchestratorEventSchema", () => {
 	it("起動イベントを検証して正規化する", () => {
