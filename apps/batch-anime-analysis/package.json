@@ -9,7 +9,7 @@
 		"local": "tsx src/local-runner.ts",
 		"test": "vitest run",
 		"typecheck": "tsc -p tsconfig.json --noEmit",
-		"lint": "biome ci src docs README.md package.json tsconfig.json",
+		"lint": "biome ci .",
 		"validate": "npm run typecheck && npm run lint && npm run test"
 	},
 	"dependencies": {
@@ -19,7 +19,8 @@
 		"@lambda-batch-playground/libs-browser": "0.1.0",
 		"@lambda-batch-playground/repositories": "0.1.0",
 		"cheerio": "^1.1.2",
-		"dotenv": "^17.4.2"
+		"dotenv": "^17.4.2",
+		"zod": "^3.25.76"
 	},
 	"devDependencies": {
 		"tsx": "^4.20.0"

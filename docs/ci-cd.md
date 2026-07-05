@@ -17,6 +17,8 @@
 7. `npm run deploy`
 
 `npm run typecheck` と `npm run lint` は Turbo 経由で workspace ごとに実行します。
+`infra` も workspace として typecheck / lint の対象に含めます。
+ただし `sst.config.ts` は SST が生成する `.sst/platform` の型に依存し CI には存在しないため、型検査は設定値を持つ `infra/config/` に限定します（lint は `sst.config.ts` も対象）。
 `npm run deploy` は workspace の build を実行してから `sst deploy --stage develop --config infra/sst.config.ts` を実行します。
 
 ## デプロイ対象

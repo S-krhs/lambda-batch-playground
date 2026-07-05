@@ -9,9 +9,11 @@ describe("dataSourceRepository", () => {
 	});
 
 	it("id に一致する data source を返す", () => {
-		expect(dataSourceRepository.findUnique("d-anime-ranking-daily")).toEqual(
-			animeMetricDataSources[0],
-		);
+		const dataSource = animeMetricDataSources.find((ds) => {
+			return ds.id === "danime-rank";
+		});
+
+		expect(dataSourceRepository.findUnique("danime-rank")).toEqual(dataSource);
 	});
 
 	it("id に一致する data source がない場合は null を返す", () => {
@@ -25,5 +27,13 @@ describe("dataSourceRepository", () => {
 		expect(dataSourceRepository.findMany()).toHaveLength(
 			animeMetricDataSources.length,
 		);
+	});
+
+	it("data source id は重複しない", () => {
+		const ids = animeMetricDataSources.map((dataSource) => {
+			return dataSource.id;
+		});
+
+		expect(new Set(ids).size).toBe(ids.length);
 	});
 });
