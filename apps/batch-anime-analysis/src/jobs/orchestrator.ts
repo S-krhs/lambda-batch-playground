@@ -5,9 +5,9 @@ import { dataSourceRepository } from "@lambda-batch-playground/repositories/anim
 import type { BatchHandler, BatchResponse } from "../shared/infra/lambda.js";
 import { getOrchestratorSettings } from "../shared/infra/secrets.js";
 import { AwsSqsMessageSender } from "../shared/infra/sqs.js";
-import { parseOrchestratorEvent } from "../features/parse-lambda-event/orchestrator-event.js";
 import type { QueueMessage } from "../shared/intermediate-models/queue-message/queue-message.js";
 import { batchNames } from "../shared/routes/batch-names.js";
+import { orchestratorEventSchema } from "../shared/schemas/lambda-events/orchestrator-event.js";
 
 const logger = createBatchLogger(batchNames.animeScrapingOrchestrator);
 
@@ -16,7 +16,7 @@ export const orchestratorJob: BatchHandler = async (
 	event,
 ): Promise<BatchResponse> => {
 	// 1. 起動イベントを orchestrator の実行入力として検証する。
-	const { scheduleHour } = parseOrchestratorEvent(event);
+	const { scheduleHour } = orchestratorEventSchema.parse(event);
 
 	// 2. repository から該当スケジュールのスクレイピング定義を取得する。
 	const dataSources = dataSourceRepository.findManyByScheduleHour(scheduleHour);
