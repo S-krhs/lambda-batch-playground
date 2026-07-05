@@ -6,7 +6,7 @@ import type {
 	AnimeWebpageMetricSource,
 } from "./types.js";
 
-const dAnimeApiSource: AnimeApiMetricSource = {
+const dAnimeRankApiSource: AnimeApiMetricSource = {
 	type: "api",
 	url: "https://animestore.docomo.ne.jp/animestore/rest/WS000122?length=200&rankingType=01",
 	itemsPath: "data/workList",
@@ -17,7 +17,58 @@ const dAnimeApiSource: AnimeApiMetricSource = {
 	},
 };
 
-const myAnimeListWebpageSource: AnimeWebpageMetricSource = {
+const dAnimeUsersApiSource: AnimeApiMetricSource = {
+	type: "api",
+	url: "https://animestore.docomo.ne.jp/animestore/rest/WS000122?length=200&rankingType=01",
+	itemsPath: "data/workList",
+	labelPath: "workInfo/workTitle",
+	value: {
+		type: "path",
+		path: "workInfo/myListCount",
+	},
+};
+
+const dAnimeFavsApiSource: AnimeApiMetricSource = {
+	type: "api",
+	url: "https://animestore.docomo.ne.jp/animestore/rest/WS000122?length=200&rankingType=01",
+	itemsPath: "data/workList",
+	labelPath: "workInfo/workTitle",
+	value: {
+		type: "path",
+		path: "workInfo/favoriteCount",
+	},
+};
+
+const dAnimeTotalNumberApiSource: AnimeApiMetricSource = {
+	type: "api",
+	url: "https://animestore.docomo.ne.jp/animestore/rest/WS000122?length=200&rankingType=01",
+	itemsPath: "data/workList",
+	labelPath: "workInfo/workTitle",
+	value: {
+		type: "path",
+		path: "rankingInfo/totalNumber",
+	},
+};
+
+const myAnimeListMembersWebpageSource: AnimeWebpageMetricSource = {
+	type: "webpage",
+	url: "https://myanimelist.net/anime/season",
+	wrapper: {
+		selector: ".js-categories-seasonal",
+	},
+	itemsSelector: ".title",
+	label: {
+		selector: ".js-title",
+	},
+	value: {
+		type: "element-text",
+		target: {
+			selector: ".js-members",
+		},
+	},
+};
+
+const myAnimeListScoreWebpageSource: AnimeWebpageMetricSource = {
 	type: "webpage",
 	url: "https://myanimelist.net/anime/season",
 	wrapper: {
@@ -35,19 +86,47 @@ const myAnimeListWebpageSource: AnimeWebpageMetricSource = {
 	},
 };
 
-export const animeMetricDataSources: AnimeMetricDataSource[] = [
+export const animeMetricDataSources: readonly AnimeMetricDataSource[] = [
 	{
-		id: "d-anime-ranking-daily",
-		websiteName: "dアニメストア",
-		metricName: "ranking",
-		timeframe: "daily",
-		source: dAnimeApiSource,
+		id: "danime-night-rank",
+		websiteName: "danime",
+		metricName: "rank",
+		timeframe: "night",
+		source: dAnimeRankApiSource,
 	},
 	{
-		id: "my-anime-list-top-anime-score",
+		id: "danime-night-users",
+		websiteName: "danime",
+		metricName: "users",
+		timeframe: "night",
+		source: dAnimeUsersApiSource,
+	},
+	{
+		id: "danime-night-favs",
+		websiteName: "danime",
+		metricName: "favs",
+		timeframe: "night",
+		source: dAnimeFavsApiSource,
+	},
+	{
+		id: "danime-night-total-number",
+		websiteName: "danime",
+		metricName: "total_number",
+		timeframe: "night",
+		source: dAnimeTotalNumberApiSource,
+	},
+	{
+		id: "my-anime-list-morning-members",
+		websiteName: "MyAnimeList",
+		metricName: "members",
+		timeframe: "morning",
+		source: myAnimeListMembersWebpageSource,
+	},
+	{
+		id: "my-anime-list-morning-score",
 		websiteName: "MyAnimeList",
 		metricName: "score",
-		timeframe: "seasonal",
-		source: myAnimeListWebpageSource,
+		timeframe: "morning",
+		source: myAnimeListScoreWebpageSource,
 	},
 ];

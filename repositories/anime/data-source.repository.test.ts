@@ -9,7 +9,7 @@ describe("dataSourceRepository", () => {
 	});
 
 	it("id に一致する data source を返す", () => {
-		expect(dataSourceRepository.findUnique("d-anime-ranking-daily")).toEqual(
+		expect(dataSourceRepository.findUnique("danime-night-rank")).toEqual(
 			animeMetricDataSources[0],
 		);
 	});
