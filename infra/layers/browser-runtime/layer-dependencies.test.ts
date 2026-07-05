@@ -18,8 +18,7 @@ const readDependencies = (packageJsonPath: string): Record<string, string> => {
 		throw new Error(`dependencies がありません: ${packageJsonPath}`);
 	}
 
-	return (packageJson as { dependencies: Record<string, string> })
-		.dependencies;
+	return (packageJson as { dependencies: Record<string, string> }).dependencies;
 };
 
 describe("browser-runtime layer の依存", () => {
