@@ -9,7 +9,7 @@
 		"local": "tsx src/local-runner.ts",
 		"test": "vitest run",
 		"typecheck": "tsc -p tsconfig.json --noEmit",
-		"lint": "biome ci src docs README.md package.json tsconfig.json",
+		"lint": "biome ci .",
 		"validate": "npm run typecheck && npm run lint && npm run test"
 	},
 	"dependencies": {
