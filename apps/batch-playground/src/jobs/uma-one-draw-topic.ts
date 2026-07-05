@@ -3,20 +3,16 @@
 import { DiscordWebhookClient } from "@eskra-aws-playground/integration-discord/discord-webhook-client.js";
 
 import { buildTopicMessage } from "../features/uma-one-draw-topic/topic-message.js";
-import type {
-	BatchHandler,
-	BatchResponse,
-	LambdaEvent,
-} from "../shared/infra/lambda.js";
-import { resolveSecrets } from "../shared/infra/secrets.js";
 import { batchNames } from "../shared/routes/batch-names.js";
+import type { BatchResponse } from "../shared/schemas/lambda/batch/response.js";
+import { getUmaOneDrawTopicSettings } from "./runtime-settings/uma-one-draw-topic-setting-resolver.js";
 
 /** UMA ワンドロのお題を Discord へ通知するバッチジョブ。 */
-export const umaOneDrawTopicJob: BatchHandler = async (
-	_event: LambdaEvent,
+export const umaOneDrawTopicJob = async (
+	_event: unknown,
 ): Promise<BatchResponse> => {
-	// 1. 設定から送信先 Discord Webhook URL を取得する。
-	const { discordWebhookUrl } = resolveSecrets();
+	// 1. 実行時設定から送信先 Discord Webhook URL を解決する。
+	const { discordWebhookUrl } = getUmaOneDrawTopicSettings();
 
 	console.log("UMA ワンドロお題通知 送信開始");
 
