@@ -5,17 +5,19 @@
 
 ## 全体像
 
-このリポジトリは npm workspaces と Turbo で管理する TypeScript モノレポです。
-Lambda バッチアプリは `apps/batch-playground/` に置き、外部サービス連携は接続先ごとに `packages/integrations/<target>/` へ分離します。
+このリポジトリは npm workspaces と Turbo で管理する、AWS Lambda バッチアプリ向けの TypeScript モノレポです。
+Lambda バッチアプリは `apps/` に置き、外部サービス連携は接続先ごとに `packages/integrations/<target>/` へ分離します。
 
 ```text
 apps/
+  batch-anime-analysis/
   batch-playground/
 infra/
 repositories/
 packages/
   integrations/
     discord/
+    sqs/
   libs/
     browser/
     utils/

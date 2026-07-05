@@ -1,8 +1,8 @@
 // In scope: .env のローカル設定から合成 SQS event を作り sqs-worker ハンドラーを呼び出す
 // Out of scope: 本番 Lambda 固有の制御やジョブ内部の処理を持つ
 import { fileURLToPath } from "node:url";
-import { createBatchLogger } from "@lambda-batch-playground/libs/logger/batch-logger.js";
-import { dataSourceRepository } from "@lambda-batch-playground/repositories/anime/data-source.repository.js";
+import { createBatchLogger } from "@eskra-aws-playground/libs/logger/batch-logger.js";
+import { dataSourceRepository } from "@eskra-aws-playground/repositories/anime/data-source.repository.js";
 import { config } from "dotenv";
 import { handler } from "./handlers/sqs-worker.js";
 import type { SqsWorkerEvent } from "./shared/schemas/lambda/sqs-worker/event.js";

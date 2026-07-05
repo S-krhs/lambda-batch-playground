@@ -1,5 +1,5 @@
 {
-	"name": "@lambda-batch-playground/integration-discord",
+	"name": "@eskra-aws-playground/integration-discord",
 	"version": "0.1.0",
 	"private": true,
 	"type": "module",
@@ -10,7 +10,7 @@
 		}
 	},
 	"dependencies": {
-		"@lambda-batch-playground/libs": "0.1.0"
+		"@eskra-aws-playground/libs": "0.1.0"
 	},
 	"scripts": {
 		"clean": "rm -rf dist",

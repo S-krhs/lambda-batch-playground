@@ -39,7 +39,7 @@ jobs -> repositories/anime -> DB
 - 外部公開用ではない metric 中間表現の型、正規化は app 内の `src/shared/intermediate-models/metric/metric.ts` に置く。
 - JSON から metric への変換は `src/features/scrape-api/`、HTML から metric への変換は `src/features/scrape-webpage/` が扱う。
 - Webpage の Playwright-core / Chromium 実行と HTML 取得は `packages/libs/browser` が扱う。
-- SQS message body は app 内の `src/shared/schemas/sqs/data-source/message.ts` で生成、検証する。Queue 送信そのものは integration package `@lambda-batch-playground/integration-sqs` が扱う。
+- SQS message body は app 内の `src/shared/schemas/sqs/data-source/message.ts` で生成、検証する。Queue 送信そのものは integration package `@eskra-aws-playground/integration-sqs` が扱う。
 - SQS は Standard Queue を使う。順序は要求せず、message の再試行と DLQ は AWS 側に委譲する。
 - Worker Lambda handler は SQS event を dataSource スクレイピング job へ渡すだけにする。SQS record ごとの実行制御と partial batch response は dataSource スクレイピング job が扱う。
 - バッチ失敗の通知は、CloudWatch alarm を SNS 経由で受ける Notifier Lambda が扱う。通知文生成は `src/features/notifications/alarm-report.ts`、送信の組み立ては `src/jobs/alarm-notification.ts` が担う。

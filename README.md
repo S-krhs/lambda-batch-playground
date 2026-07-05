@@ -1,6 +1,6 @@
-# Lambda Batch Playground
+# Eskra AWS Playground
 
-Lambda イベントの `job` に応じてバッチジョブを実行する TypeScript モノレポです。
+AWS Lambda と SST でバッチジョブを運用する TypeScript モノレポです。
 
 ### app 指定実行
 

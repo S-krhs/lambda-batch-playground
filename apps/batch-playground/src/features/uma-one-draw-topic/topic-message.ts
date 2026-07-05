@@ -1,11 +1,11 @@
 // In scope: UMA ワンドロのお題メッセージを生成する
 // Out of scope: Discord payload 生成、外部送信、Lambda レスポンス作成を行う
-import { GachaPool } from "@lambda-batch-playground/libs/gacha/gacha-pool.js";
-import { topicEntryRepository } from "@lambda-batch-playground/repositories/playground/topic-entry.repository.js";
+import { GachaPool } from "@eskra-aws-playground/libs/gacha/gacha-pool.js";
+import { topicEntryRepository } from "@eskra-aws-playground/repositories/playground/topic-entry.repository.js";
 import {
 	TOPIC_RARITIES,
 	type TopicEntry,
-} from "@lambda-batch-playground/repositories/playground/types.js";
+} from "@eskra-aws-playground/repositories/playground/types.js";
 import {
 	TOPIC_MESSAGE_TEMPLATE,
 	TOPIC_RARITY_WEIGHTS,
