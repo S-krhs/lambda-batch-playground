@@ -9,8 +9,12 @@ describe("dataSourceRepository", () => {
 	});
 
 	it("id に一致する data source を返す", () => {
+		const dataSource = animeMetricDataSources.find((ds) => {
+			return ds.id === "danime-night-rank";
+		});
+
 		expect(dataSourceRepository.findUnique("danime-night-rank")).toEqual(
-			animeMetricDataSources[0],
+			dataSource,
 		);
 	});
 
@@ -25,5 +29,13 @@ describe("dataSourceRepository", () => {
 		expect(dataSourceRepository.findMany()).toHaveLength(
 			animeMetricDataSources.length,
 		);
+	});
+
+	it("data source id は重複しない", () => {
+		const ids = animeMetricDataSources.map((dataSource) => {
+			return dataSource.id;
+		});
+
+		expect(new Set(ids).size).toBe(ids.length);
 	});
 });
