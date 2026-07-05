@@ -11,8 +11,8 @@ import type {
 	SqsBatchItemFailure,
 } from "../shared/infra/lambda.js";
 import { getDataSourceSettings } from "../shared/infra/secrets.js";
-import { parseQueueMessage } from "../shared/intermediate-models/queue-message/queue-message.js";
 import { batchNames } from "../shared/routes/batch-names.js";
+import { dataSourceMessageSchema } from "../shared/schemas/queue-messages/data-source-message.js";
 
 const logger = createBatchLogger(batchNames.animeScrapingDataSource);
 
@@ -26,7 +26,7 @@ export const dataSourceJob: SqsBatchHandler = async (event) => {
 
 		try {
 			// 1. SQS message body を dataSource スクレイピング job の入力へ正規化する。
-			const message = parseQueueMessage(record.body);
+			const message = dataSourceMessageSchema.parse(JSON.parse(record.body));
 
 			logger.start({
 				messageId,

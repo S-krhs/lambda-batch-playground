@@ -15,7 +15,7 @@
 
 - Orchestrator Lambda は実行対象の決定と SQS 投入に集中し、スクレイピングを直接実行しない。
 - Worker Lambda handler は SQS event を dataSource スクレイピング job へ渡すだけにし、message body の解釈や業務処理を持たない。
-- SQS message body の生成、検証は `src/shared/intermediate-models/queue-message/queue-message.ts` に集約する。
+- SQS message body の生成、検証は `src/shared/schemas/queue-messages/data-source-message.ts` に集約する。
 - SQS 送信は `src/shared/infra/sqs.ts` に置き、queue URL 解決は handler ごとの設定解決として `src/shared/infra/secrets.ts` に置く。
 - dataSource スクレイピング job は SQS event 内の record を処理し、partial batch response で失敗 message だけを再試行対象にする。
 
