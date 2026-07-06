@@ -13,7 +13,8 @@ app の内部型や DB の行構造ではなく、どのサイトからどの指
   "id": "my-anime-list-score",
   "websiteName": "MyAnimeList",
   "metricName": "score",
-  "scheduleHour": 9,
+  "higherIsBetter": true,
+  "scheduleHourJst": 9,
   "source": {
     "type": "api",
     "url": "https://example.com/api",
@@ -27,7 +28,8 @@ app の内部型や DB の行構造ではなく、どのサイトからどの指
 }
 ```
 
-- `scheduleHour` は、この定義をスクレイピングする起動スケジュール（JST の hour）です。orchestrator が起動時刻ごとに対象を絞り込みます。
+- `higherIsBetter` は、値が大きいほど上位とみなすなら `true`、順位系（値が小さいほど上位）なら `false` です。通知のランキング表示の並び順に使います。
+- `scheduleHourJst` は、この定義をスクレイピングする起動スケジュールです。orchestrator が起動時刻ごとに対象を絞り込みます。
 - `source.type: "api"` は JSON path で metric を取り出します。
 - `source.type: "webpage"` は CSS selector で metric を取り出します。
 - ranking のように表示順を値にする場合は `value.type: "item-index"` を使います。

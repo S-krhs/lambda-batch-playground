@@ -10,7 +10,7 @@ export const dataSourceRepository = {
 
 	findManyByScheduleHour: (scheduleHour: number): AnimeMetricDataSource[] => {
 		return animeMetricDataSources.filter((dataSource) => {
-			return dataSource.scheduleHour === scheduleHour;
+			return dataSource.scheduleHourJst === scheduleHour;
 		});
 	},
 
