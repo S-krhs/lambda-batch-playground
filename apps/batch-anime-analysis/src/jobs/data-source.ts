@@ -56,6 +56,7 @@ export const dataSourceJob = async (
 				source: {
 					websiteName: dataSource.websiteName,
 					metricName: dataSource.metricName,
+					higherIsBetter: dataSource.higherIsBetter,
 				},
 				metrics,
 				skippedCount,

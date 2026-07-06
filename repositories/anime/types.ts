@@ -54,7 +54,7 @@ export interface AnimeMetricDataSource {
 	id: string;
 	websiteName: string;
 	metricName: string;
-	/** この定義をスクレイピングする起動スケジュール（JST の hour）。 */
-	scheduleHour: number;
+	higherIsBetter: boolean;
+	scheduleHourJst: number;
 	source: AnimeApiMetricSource | AnimeWebpageMetricSource;
 }
