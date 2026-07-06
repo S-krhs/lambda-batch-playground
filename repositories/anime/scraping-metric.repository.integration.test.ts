@@ -7,6 +7,7 @@ import { scrapingMetricRepository } from "./scraping-metric.repository.js";
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
 const testDataSourceId = `integration-test-${Date.now()}`;
+const testScrapedDate = "2026-07-06";
 
 describe.skipIf(!testDatabaseUrl)(
 	"scrapingMetricRepository (integration)",
@@ -24,11 +25,9 @@ describe.skipIf(!testDatabaseUrl)(
 		});
 
 		it("スクレイピング結果を 1 metric = 1 行で insert して読み戻せる", async () => {
-			const scrapedAt = new Date();
-
 			await scrapingMetricRepository.saveScrapingResult({
 				dataSourceId: testDataSourceId,
-				scrapedAt,
+				scrapedDate: testScrapedDate,
 				metrics: [
 					{ label: "作品A", value: 1 },
 					{ label: "作品B", value: 2.5 },
@@ -48,7 +47,9 @@ describe.skipIf(!testDatabaseUrl)(
 				value: 1,
 			});
 			expect(rows[1]).toMatchObject({ label: "作品B", value: 2.5 });
-			expect(rows[0]?.scrapedAt.getTime()).toBe(scrapedAt.getTime());
+			expect(rows[0]?.scrapedDate.toISOString().slice(0, 10)).toBe(
+				testScrapedDate,
+			);
 			expect(rows[0]?.id).toBeGreaterThan(0n);
 		});
 
@@ -56,7 +57,7 @@ describe.skipIf(!testDatabaseUrl)(
 			await expect(
 				scrapingMetricRepository.saveScrapingResult({
 					dataSourceId: testDataSourceId,
-					scrapedAt: new Date(),
+					scrapedDate: testScrapedDate,
 					metrics: [{ label: "", value: 1 }],
 				}),
 			).rejects.toThrow();

@@ -22,10 +22,10 @@ model ScrapingMetric {
   label        String
   /// @zod.number.finite()
   value        Float
-  scrapedAt    DateTime @map("scraped_at") @db.Timestamptz
+  scrapedDate  DateTime @map("scraped_date") @db.Date
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  @@index([dataSourceId, scrapedAt])
+  @@index([dataSourceId, scrapedDate])
   @@map("scraping_metrics")
   @@schema("anime")
 }

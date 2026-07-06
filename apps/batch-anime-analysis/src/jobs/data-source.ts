@@ -1,8 +1,10 @@
 // In scope: SQS event から dataSource 単位のアニメスクレイピングを実行する
 // Out of scope: Lambda エントリポイント、SQS message の構築、個別 parser の詳細を持つ
 import { DiscordWebhookClient } from "@eskra-aws-playground/integration-discord/discord-webhook-client.js";
+import { getCurrentJstDateString } from "@eskra-aws-playground/libs/date/current-jst-date.js";
 import { createBatchLogger } from "@eskra-aws-playground/libs/logger/batch-logger.js";
 import { dataSourceRepository } from "@eskra-aws-playground/repositories/anime/data-source.repository.js";
+import { scrapingMetricRepository } from "@eskra-aws-playground/repositories/anime/scraping-metric.repository.js";
 import { buildScrapingReport } from "../features/notifications/scraping-report.js";
 import { getApiMetrics } from "../features/scrape-api/get-metrics.js";
 import { getWebpageMetrics } from "../features/scrape-webpage/get-metrics.js";
@@ -50,8 +52,17 @@ export const dataSourceJob = async (
 				sourceType === "api"
 					? await getApiMetrics(dataSource.source)
 					: await getWebpageMetrics(dataSource.source);
+			// 取得日は job のメタパラメータとして metric 取得完了時に採る
+			const scrapedDate = getCurrentJstDateString();
 
-			// 4. Discord 通知文を生成して送信する。
+			// 4. スクレイピング結果を DB へ保存する。失敗は record 単位の retry に任せる。
+			await scrapingMetricRepository.saveScrapingResult({
+				dataSourceId: dataSource.id,
+				scrapedDate,
+				metrics,
+			});
+
+			// 5. Discord 通知文を生成して送信する。
 			const reportMessage = buildScrapingReport({
 				source: {
 					websiteName: dataSource.websiteName,
@@ -86,7 +97,7 @@ export const dataSourceJob = async (
 		}
 	}
 
-	// 5. SQS へ record ごとの処理結果を返す。
+	// 6. SQS へ record ごとの処理結果を返す。
 	return {
 		batchItemFailures,
 	};

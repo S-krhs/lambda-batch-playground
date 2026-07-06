@@ -12,7 +12,8 @@ export interface ScrapingResultMetric {
 /** スクレイピング結果の保存入力。 */
 export interface SaveScrapingResultInput {
 	dataSourceId: string;
-	scrapedAt: Date;
+	/** JST 基準の取得日(YYYY-MM-DD)。 */
+	scrapedDate: string;
 	metrics: ScrapingResultMetric[];
 }
 
@@ -27,7 +28,7 @@ export const scrapingMetricRepository = {
 				dataSourceId: input.dataSourceId,
 				label: metric.label,
 				value: metric.value,
-				scrapedAt: input.scrapedAt,
+				scrapedDate: input.scrapedDate,
 			});
 		});
 
