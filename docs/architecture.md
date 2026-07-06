@@ -13,6 +13,7 @@ apps/
   batch-anime-analysis/
   batch-playground/
 infra/
+migration/
 repositories/
 packages/
   integrations/
@@ -28,7 +29,8 @@ docs/
 
 - `apps/*`: デプロイ単位または実行単位のアプリ。
 - `infra/`: SST など、アプリをデプロイするためのインフラ定義。
-- `repositories/`: 複数 app から参照するデータアクセス境界。静的データ、DB、外部ストレージの詳細を隠蔽する。
+- `migration/`: Prisma schema と migration history。workspace ではなく、root の `prisma` CLI と `prisma.config.ts` から使う。
+- `repositories/`: 複数 app から参照するデータアクセス境界。静的データ、DB、外部ストレージの詳細を隠蔽する。DB client と生成コード(`db/`、`generated/`)は exports に含めず app から import できない。
 - `packages/integrations/*`: 外部サービス接続先ごとの integration package。
 - `packages/libs/utils`: 汎用処理 package。dayjs のような軽量な npm 依存は持てる。
 - `packages/libs/browser`: Playwright-core など browser 実行依存を持つ汎用処理 package。
