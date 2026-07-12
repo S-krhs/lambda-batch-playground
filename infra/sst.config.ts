@@ -1,33 +1,7 @@
 /// <reference path=".sst/platform/config.d.ts" />
 
-import type { JobSchedule } from "./config/job-schedules.js";
-
 // SST app と AWS リソース名の接頭辞として使うアプリ名
 const appName = "eskra-aws-playground";
-
-/**
- * JobSchedule を CronV2 の引数へ変換する。
- * randomWindowMinutes 指定時は、schedule の時刻を起点に flexibleTimeWindow で実行時刻をランダムにずらす。
- */
-const toCronV2Args = (jobSchedule: JobSchedule) => {
-	const { randomWindowMinutes, ...cronArgs } = jobSchedule;
-
-	if (randomWindowMinutes === undefined) {
-		return cronArgs;
-	}
-
-	return {
-		...cronArgs,
-		transform: {
-			schedule: (args: aws.scheduler.ScheduleArgs) => {
-				args.flexibleTimeWindow = {
-					mode: "FLEXIBLE",
-					maximumWindowInMinutes: randomWindowMinutes,
-				};
-			},
-		},
-	};
-};
 
 export default $config({
 	// SST app の基本設定。デプロイ先は develop stage 固定。
@@ -61,7 +35,7 @@ export default $config({
 		// UMA ワンドロお題通知の Scheduler を作成。実行タイミングは config/job-schedules で一元管理する
 		new sst.aws.CronV2("UmaOneDrawTopicSchedule", {
 			function: batchFunction,
-			...toCronV2Args(jobSchedules.umaOneDrawTopic),
+			...jobSchedules.umaOneDrawTopic,
 		});
 
 		// アニメ分析結果通知用の Discord Webhook URL を Secret として扱う
