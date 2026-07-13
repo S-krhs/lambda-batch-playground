@@ -4,6 +4,7 @@
 /** Batch Playground app でサポートする job 名。 */
 export const batchNames = {
 	umaOneDrawTopic: "uma-one-draw-topic",
+	umaOneDrawTopicScheduler: "uma-one-draw-topic-scheduler",
 } as const;
 
 /** サポートする job 名の union 型。 */

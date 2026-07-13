@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { umaOneDrawTopicJob } from "../jobs/uma-one-draw-topic.js";
+import { umaOneDrawTopicSchedulerJob } from "../jobs/uma-one-draw-topic-scheduler.js";
 import { batchNames } from "../shared/routes/batch-names.js";
 import { getJobName, resolveBatchJob } from "./batch-router.js";
 
@@ -34,6 +35,9 @@ describe("batch-router", () => {
 	it("route に対応する handler を返す", () => {
 		expect(resolveBatchJob(batchNames.umaOneDrawTopic)).toBe(
 			umaOneDrawTopicJob,
+		);
+		expect(resolveBatchJob(batchNames.umaOneDrawTopicScheduler)).toBe(
+			umaOneDrawTopicSchedulerJob,
 		);
 	});
 });

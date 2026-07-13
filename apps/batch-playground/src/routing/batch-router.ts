@@ -1,6 +1,7 @@
 // In scope: Lambda イベントからジョブ名を推定し、登録済みジョブのハンドラーへ解決する
 // Out of scope: 個別ジョブの処理内容や外部連携の詳細を持つ
 import { umaOneDrawTopicJob } from "../jobs/uma-one-draw-topic.js";
+import { umaOneDrawTopicSchedulerJob } from "../jobs/uma-one-draw-topic-scheduler.js";
 import {
 	type BatchName,
 	batchNameList,
@@ -9,8 +10,11 @@ import {
 import { batchEventSchema } from "../shared/schemas/lambda/batch/event.js";
 import type { BatchResponse } from "../shared/schemas/lambda/batch/response.js";
 
-/** ジョブ名に対応して実行されるバッチジョブ関数。 */
-export type BatchJob = (event: unknown) => Promise<BatchResponse>;
+/** ジョブ名に対応して実行されるバッチジョブ関数。context には Lambda context を渡す。 */
+export type BatchJob = (
+	event: unknown,
+	context?: unknown,
+) => Promise<BatchResponse>;
 
 const isBatchName = (value: string): value is BatchName => {
 	return batchNameList.includes(value as BatchName);
@@ -38,5 +42,7 @@ export const resolveBatchJob = (jobName: BatchName): BatchJob => {
 	switch (jobName) {
 		case batchNames.umaOneDrawTopic:
 			return umaOneDrawTopicJob;
+		case batchNames.umaOneDrawTopicScheduler:
+			return umaOneDrawTopicSchedulerJob;
 	}
 };
