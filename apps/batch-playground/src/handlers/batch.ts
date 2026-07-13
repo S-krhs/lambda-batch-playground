@@ -4,9 +4,12 @@ import { getJobName, resolveBatchJob } from "../routing/batch-router.js";
 import type { BatchResponse } from "../shared/schemas/lambda/batch/response.js";
 
 /** Lambda の共通エントリポイント。イベントに対応するバッチジョブを実行する。 */
-export const handler = async (event: unknown = {}): Promise<BatchResponse> => {
+export const handler = async (
+	event: unknown = {},
+	context?: unknown,
+): Promise<BatchResponse> => {
 	const jobName = getJobName(event);
 	const batchJob = resolveBatchJob(jobName);
 
-	return batchJob(event);
+	return batchJob(event, context);
 };
