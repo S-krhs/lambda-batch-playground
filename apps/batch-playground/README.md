@@ -30,6 +30,7 @@ UMA ワンドロのお題を生成し、Discord Webhook へ通知します。
 - schedule group 名と role ARN は SST が設定する環境変数から解決します。
 - 起動対象 Lambda の ARN は Lambda context から解決します。ローカル実行では `UMA_ONE_DRAW_TOPIC_TARGET_FUNCTION_ARN` で代替します。
 - 当日分が登録済みの場合は二重登録せず正常終了します。ただし発火後は schedule が自動削除されるため、その後に再実行すると再登録され通知が重複します。
+- cron は JST 00:00 起動のため、それ以降にデプロイや障害で当日分が未登録の日は、JST 18:00 より前に `{"job": "uma-one-draw-topic-scheduler"}` で Lambda を手動起動すると残り window 内で当日分を登録できます(18:00 以降はエラーになります)。
 
 ## 環境変数
 
