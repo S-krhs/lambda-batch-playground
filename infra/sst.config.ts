@@ -31,13 +31,37 @@ export default $config({
 			},
 		);
 
-		// one-time schedule が batch Lambda を起動するときに引き受ける role
+		// one-time schedule が batch Lambda を起動するときに引き受ける role。
+		// confused deputy 対策として、自アカウントのこの schedule group からの引き受けに限定する
+		const callerIdentity = aws.getCallerIdentityOutput({});
 		const umaOneDrawTopicScheduleRole = new aws.iam.Role(
 			"UmaOneDrawTopicScheduleRole",
 			{
-				assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
-					Service: "scheduler.amazonaws.com",
-				}),
+				assumeRolePolicy: aws.iam.getPolicyDocumentOutput({
+					statements: [
+						{
+							actions: ["sts:AssumeRole"],
+							principals: [
+								{
+									type: "Service",
+									identifiers: ["scheduler.amazonaws.com"],
+								},
+							],
+							conditions: [
+								{
+									test: "StringEquals",
+									variable: "aws:SourceAccount",
+									values: [callerIdentity.accountId],
+								},
+								{
+									test: "ArnLike",
+									variable: "aws:SourceArn",
+									values: [umaOneDrawTopicScheduleGroup.arn],
+								},
+							],
+						},
+					],
+				}).json,
 			},
 		);
 
