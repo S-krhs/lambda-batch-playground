@@ -1,0 +1,86 @@
+// In scope: 遊技チェックリマインダーの Discord 投稿バッチをオーケストレーションする
+// Out of scope: リマインダーメッセージ生成や Discord Bot API HTTP 通信の詳細を持つ
+import {
+	type DiscordActionRow,
+	DiscordBotClient,
+	type DiscordButtonComponent,
+	type DiscordChannelMessagePayload,
+} from "@eskra-aws-playground/integration-discord/discord-bot-client.js";
+import { createBatchLogger } from "@eskra-aws-playground/libs/logger/batch-logger.js";
+
+import {
+	buildReminderMessage,
+	type ReminderMessage,
+} from "../features/play-check-reminder/reminder-message.js";
+import { batchNames } from "../shared/routes/batch-names.js";
+import type { BatchResponse } from "../shared/schemas/lambda/batch/response.js";
+import { getPlayCheckReminderSettings } from "./runtime-settings/play-check-reminder-setting-resolver.js";
+
+const logger = createBatchLogger(batchNames.playCheckReminder);
+
+/** feature のプラットフォーム非依存メッセージを Discord のチャンネル投稿 payload へ変換する。 */
+const toDiscordChannelMessagePayload = (
+	message: ReminderMessage,
+	targetUserId: string,
+): DiscordChannelMessagePayload => {
+	const actionRow: DiscordActionRow = {
+		type: 1,
+		components: message.choices.map((choice): DiscordButtonComponent => {
+			return {
+				type: 2,
+				style: choice.style,
+				label: choice.label,
+				custom_id: choice.customId,
+			};
+		}),
+	};
+
+	return {
+		content: message.content,
+		components: [actionRow],
+		allowed_mentions: { parse: [], users: [targetUserId] },
+	};
+};
+
+/** 遊技チェックリマインダーをボタン付きメッセージとして Discord チャンネルへ投稿するバッチジョブ。 */
+export const playCheckReminderJob = async (
+	_event: unknown,
+): Promise<BatchResponse> => {
+	// 1. 実行時設定から Bot token・投稿先チャンネル ID・対象ユーザー ID を解決する。
+	const { discordBotToken, discordChannelId, targetUserId } =
+		getPlayCheckReminderSettings();
+
+	logger.start();
+
+	// 2. feature でメンションと選択肢ボタン付きのリマインダーメッセージを生成する。
+	const message = buildReminderMessage(targetUserId);
+
+	// 3. Discord Bot integration へ投稿を委譲する。失敗しても throw せず、
+	//    Lambda 非同期リトライによる重複投稿を防ぐ。
+	let notificationSucceeded = false;
+	try {
+		const botClient = new DiscordBotClient(discordBotToken);
+		await botClient.postChannelMessage(
+			discordChannelId,
+			toDiscordChannelMessagePayload(message, targetUserId),
+		);
+		notificationSucceeded = true;
+	} catch (notificationError) {
+		logger.failure(notificationError, { retryable: false });
+	}
+
+	logger.complete({
+		choiceCount: message.choices.length,
+		notificationSucceeded,
+	});
+
+	// 4. Lambda ハンドラーへ共通レスポンスを返す。
+	return {
+		ok: true,
+		job: batchNames.playCheckReminder,
+		details: {
+			choiceCount: message.choices.length,
+			notificationSucceeded,
+		},
+	};
+};

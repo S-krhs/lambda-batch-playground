@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { playCheckReminderJob } from "../jobs/play-check-reminder.js";
 import { umaOneDrawTopicJob } from "../jobs/uma-one-draw-topic.js";
 import { umaOneDrawTopicSchedulerJob } from "../jobs/uma-one-draw-topic-scheduler.js";
 import { batchNames } from "../shared/routes/batch-names.js";
@@ -38,6 +39,9 @@ describe("batch-router", () => {
 		);
 		expect(resolveBatchJob(batchNames.umaOneDrawTopicScheduler)).toBe(
 			umaOneDrawTopicSchedulerJob,
+		);
+		expect(resolveBatchJob(batchNames.playCheckReminder)).toBe(
+			playCheckReminderJob,
 		);
 	});
 });

@@ -5,6 +5,7 @@
 export const batchNames = {
 	umaOneDrawTopic: "uma-one-draw-topic",
 	umaOneDrawTopicScheduler: "uma-one-draw-topic-scheduler",
+	playCheckReminder: "play-check-reminder",
 } as const;
 
 /** サポートする job 名の union 型。 */

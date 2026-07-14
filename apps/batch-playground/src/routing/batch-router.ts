@@ -1,5 +1,6 @@
 // In scope: Lambda イベントからジョブ名を推定し、登録済みジョブのハンドラーへ解決する
 // Out of scope: 個別ジョブの処理内容や外部連携の詳細を持つ
+import { playCheckReminderJob } from "../jobs/play-check-reminder.js";
 import { umaOneDrawTopicJob } from "../jobs/uma-one-draw-topic.js";
 import { umaOneDrawTopicSchedulerJob } from "../jobs/uma-one-draw-topic-scheduler.js";
 import {
@@ -44,5 +45,7 @@ export const resolveBatchJob = (jobName: BatchName): BatchJob => {
 			return umaOneDrawTopicJob;
 		case batchNames.umaOneDrawTopicScheduler:
 			return umaOneDrawTopicSchedulerJob;
+		case batchNames.playCheckReminder:
+			return playCheckReminderJob;
 	}
 };
