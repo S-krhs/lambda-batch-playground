@@ -312,5 +312,24 @@ export default $config({
 			treatMissingData: "notBreaching",
 			alarmActions: [alertTopic.arn],
 		});
+
+		// DLQ を持たない schedule 起動の batch Lambda のエラーを通知する。
+		// 深夜の scheduler job が失敗するとその日のお題通知が丸ごとスキップされるため検知が必要
+		new aws.cloudwatch.MetricAlarm("PlaygroundBatchErrorAlarm", {
+			name: `${appName}-${$app.stage}-playground-batch-errors`,
+			alarmDescription: alarmDescriptions.playgroundBatchError,
+			namespace: "AWS/Lambda",
+			metricName: "Errors",
+			dimensions: {
+				FunctionName: batchFunction.name,
+			},
+			statistic: "Sum",
+			period: 300,
+			evaluationPeriods: 1,
+			threshold: 1,
+			comparisonOperator: "GreaterThanOrEqualToThreshold",
+			treatMissingData: "notBreaching",
+			alarmActions: [alertTopic.arn],
+		});
 	},
 });
