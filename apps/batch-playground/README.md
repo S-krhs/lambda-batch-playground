@@ -52,6 +52,8 @@ UMA ワンドロのお題を生成し、Discord Webhook へ通知します。
 ローカル実行:
 
 - `BATCH_JOB`
+- `UMA_ONE_DRAW_TOPIC_SCHEDULE_GROUP_NAME`（`uma-one-draw-topic-scheduler` のみ）
+- `UMA_ONE_DRAW_TOPIC_SCHEDULER_ROLE_ARN`（`uma-one-draw-topic-scheduler` のみ）
 - `UMA_ONE_DRAW_TOPIC_TARGET_FUNCTION_ARN`（`uma-one-draw-topic-scheduler` のみ）
 
 例:
