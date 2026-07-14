@@ -22,11 +22,21 @@ export const umaOneDrawTopicJob = async (
 	// 2. feature で UMA ワンドロのお題メッセージを生成する。
 	const message = buildTopicMessage();
 
-	// 3. Discord Webhook integration へ送信を委譲する。
-	const webhookClient = new DiscordWebhookClient(discordWebhookUrl);
-	await webhookClient.postMessage(message.content);
+	// 3. Discord Webhook integration へ送信を委譲する。失敗しても throw せず、
+	//    Lambda 非同期リトライによる重複通知を防ぐ。
+	let notificationSucceeded = false;
+	try {
+		const webhookClient = new DiscordWebhookClient(discordWebhookUrl);
+		await webhookClient.postMessage(message.content);
+		notificationSucceeded = true;
+	} catch (notificationError) {
+		logger.failure(notificationError, { retryable: false });
+	}
 
-	logger.complete({ messageLength: message.content.length });
+	logger.complete({
+		messageLength: message.content.length,
+		notificationSucceeded,
+	});
 
 	// 4. Lambda ハンドラーへ共通レスポンスを返す。
 	return {
@@ -34,6 +44,7 @@ export const umaOneDrawTopicJob = async (
 		job: batchNames.umaOneDrawTopic,
 		details: {
 			messageLength: message.content.length,
+			notificationSucceeded,
 		},
 	};
 };
