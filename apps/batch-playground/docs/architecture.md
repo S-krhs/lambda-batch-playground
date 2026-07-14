@@ -15,7 +15,6 @@
 | `repositories/playground/` | 複数 app で共有するお題候補の静的カタログ、候補読み込み | Lambda イベント解釈、お題選択、メッセージ生成、抽選重みやテンプレートの保持、外部送信 |
 | `src/shared/schemas/` | handler ごとの起動イベント・実行 context 検証 schema と応答型（`lambda/<handler>/event.ts`・`context.ts`・`response.ts`） | 実行時設定の解決と型、ジョブ判定、外部サービス固有の型 |
 | `src/jobs/runtime-settings/` | job ごとの実行時設定の型と、SST link / 環境変数からの解決 | 個別 feature の値、event/response の型・契約、外部サービスとの通信 |
-| `src/local-runner.ts` | `.env` を使ったローカル起動 | 本番 Lambda 固有の制御、ジョブ内部処理 |
 
 ## 依存方向
 
