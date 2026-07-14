@@ -10,25 +10,22 @@ export interface UmaOneDrawTopicSchedulerSettings {
 	schedulerRoleArn: string;
 }
 
+const requireEnv = (name: string): string => {
+	const value = (process.env[name] ?? "").trim();
+
+	if (!value) {
+		throw new Error(`${name} が設定されていません。`);
+	}
+
+	return value;
+};
+
 /** UMA ワンドロお題 scheduler job が使う実行時設定を解決する。 */
 export const getUmaOneDrawTopicSchedulerSettings =
 	(): UmaOneDrawTopicSchedulerSettings => {
-		const scheduleGroupName = (
-			process.env.UMA_ONE_DRAW_TOPIC_SCHEDULE_GROUP_NAME ?? ""
-		).trim();
-		const schedulerRoleArn = (
-			process.env.UMA_ONE_DRAW_TOPIC_SCHEDULER_ROLE_ARN ?? ""
-		).trim();
-
-		if (!scheduleGroupName || !schedulerRoleArn) {
-			throw new Error(
-				"UMA_ONE_DRAW_TOPIC_SCHEDULE_GROUP_NAME または UMA_ONE_DRAW_TOPIC_SCHEDULER_ROLE_ARN が設定されていません。",
-			);
-		}
-
 		return {
-			scheduleGroupName,
-			schedulerRoleArn,
+			scheduleGroupName: requireEnv("UMA_ONE_DRAW_TOPIC_SCHEDULE_GROUP_NAME"),
+			schedulerRoleArn: requireEnv("UMA_ONE_DRAW_TOPIC_SCHEDULER_ROLE_ARN"),
 		};
 	};
 
