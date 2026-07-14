@@ -11,7 +11,7 @@ import {
 
 /** one-time schedule の実行計画。 */
 export interface OneTimeInvocationPlan {
-	/** 日付で一意にした schedule 名。同日の二重登録を登録時の重複エラーで防ぐ。 */
+	/** 日付で一意にした schedule 名。発火前の同日二重登録は同名検知で防ぐ(発火後は自動削除で名前が解放され、防げない)。 */
 	scheduleName: string;
 	/** at() 式へ渡す timezone ローカルの起動時刻(YYYY-MM-DDTHH:mm:ss)。 */
 	scheduleAt: string;

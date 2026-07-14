@@ -29,8 +29,9 @@ export const umaOneDrawTopicSchedulerJob = async (
 	const invocationPlan = planOneTimeInvocation();
 
 	// 3. EventBridge Scheduler integration へ one-time schedule の登録を委譲する。
+	//    当日分が登録済み(同名 schedule が存在)の場合は二重登録せず正常終了する。
 	const scheduleClient = new OneTimeScheduleClient();
-	await scheduleClient.createSchedule({
+	const { created } = await scheduleClient.createSchedule({
 		name: invocationPlan.scheduleName,
 		groupName: scheduleGroupName,
 		scheduleAt: invocationPlan.scheduleAt,
@@ -40,7 +41,7 @@ export const umaOneDrawTopicSchedulerJob = async (
 		input: { job: batchNames.umaOneDrawTopic },
 	});
 
-	logger.complete({ scheduleAt: invocationPlan.scheduleAt });
+	logger.complete({ scheduleAt: invocationPlan.scheduleAt, created });
 
 	// 4. Lambda ハンドラーへ共通レスポンスを返す。
 	return {
@@ -48,6 +49,7 @@ export const umaOneDrawTopicSchedulerJob = async (
 		job: batchNames.umaOneDrawTopicScheduler,
 		details: {
 			scheduleAt: invocationPlan.scheduleAt,
+			created,
 		},
 	};
 };

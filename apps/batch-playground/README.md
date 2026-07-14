@@ -29,6 +29,7 @@ UMA ワンドロのお題を生成し、Discord Webhook へ通知します。
 
 - schedule group 名と role ARN は SST が設定する環境変数から解決します。
 - 起動対象 Lambda の ARN は Lambda context から解決します。ローカル実行では `UMA_ONE_DRAW_TOPIC_TARGET_FUNCTION_ARN` で代替します。
+- 当日分が登録済みの場合は二重登録せず正常終了します。ただし発火後は schedule が自動削除されるため、その後に再実行すると再登録され通知が重複します。
 
 ## 環境変数
 
