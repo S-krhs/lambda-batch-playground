@@ -3,16 +3,14 @@
 import { z } from "zod";
 
 /** Function URL Lambda が受け取る Lambda Function URL イベント schema。 */
-export const discordInteractionFunctionUrlEventSchema = z.object({
+export const functionUrlEventSchema = z.object({
 	headers: z.record(z.string(), z.string()),
 	body: z.string().optional(),
 	isBase64Encoded: z.boolean().optional(),
 });
 
 /** Function URL Lambda が受け取る Lambda Function URL イベント。 */
-export type DiscordInteractionFunctionUrlEvent = z.infer<
-	typeof discordInteractionFunctionUrlEventSchema
->;
+export type FunctionUrlEvent = z.infer<typeof functionUrlEventSchema>;
 
 /** リクエストの生 body をパースした Discord interaction schema。 */
 export const discordInteractionSchema = z.object({
@@ -42,7 +40,7 @@ export const discordInteractionSchema = z.object({
 export type DiscordInteraction = z.infer<typeof discordInteractionSchema>;
 
 /** Function URL Lambda が Lambda Function URL へ返す HTTP レスポンス。 */
-export interface DiscordInteractionResponse {
+export interface FunctionUrlResponse {
 	statusCode: number;
 	headers: Record<string, string>;
 	body: string;

@@ -6,9 +6,9 @@ import { Resource } from "sst/resource";
 
 import { resolveComponentInteraction } from "../routes.js";
 import {
-	type DiscordInteractionFunctionUrlEvent,
-	type DiscordInteractionResponse,
 	discordInteractionSchema,
+	type FunctionUrlEvent,
+	type FunctionUrlResponse,
 } from "../schema.js";
 
 const logger = createBatchLogger("discord-interaction");
@@ -27,7 +27,7 @@ const UNSUPPORTED_INTERACTION_CONTENT = "この操作には対応していませ
 const jsonResponse = (
 	statusCode: number,
 	body: unknown,
-): DiscordInteractionResponse => {
+): FunctionUrlResponse => {
 	return {
 		statusCode,
 		headers: { "Content-Type": "application/json" },
@@ -36,7 +36,7 @@ const jsonResponse = (
 };
 
 /** 本人にだけ見える ephemeral メッセージ応答を作る。 */
-const ephemeralResponse = (content: string): DiscordInteractionResponse => {
+const ephemeralResponse = (content: string): FunctionUrlResponse => {
 	return jsonResponse(200, {
 		type: RESPONSE_TYPE_CHANNEL_MESSAGE,
 		data: {
@@ -51,7 +51,7 @@ const ephemeralResponse = (content: string): DiscordInteractionResponse => {
 const handleMessageComponent = (
 	customId: string | undefined,
 	pressedUserId: string | undefined,
-): DiscordInteractionResponse => {
+): FunctionUrlResponse => {
 	const reply =
 		customId && pressedUserId
 			? resolveComponentInteraction(customId, pressedUserId)
@@ -77,8 +77,8 @@ const handleMessageComponent = (
 
 /** 署名検証済みの Function URL イベントから interaction を解釈し、種別に応じた応答を返すジョブ。 */
 export const discordInteractionJob = async (
-	event: DiscordInteractionFunctionUrlEvent,
-): Promise<DiscordInteractionResponse> => {
+	event: FunctionUrlEvent,
+): Promise<FunctionUrlResponse> => {
 	// 1. SST link から Discord application の public key を解決する。
 	const discordInteractionPublicKey =
 		Resource.DiscordInteractionPublicKey.value;

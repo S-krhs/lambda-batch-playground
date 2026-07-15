@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { DiscordInteractionFunctionUrlEvent } from "../schema.js";
+import type { FunctionUrlEvent } from "../schema.js";
 import { discordInteractionJob } from "./discord-interaction.js";
 
 const verifier = vi.hoisted(() => {
@@ -30,7 +30,7 @@ const otherUserId = "222222222222222222";
 const buildEvent = (
 	rawBody: string,
 	options: { base64?: boolean } = {},
-): DiscordInteractionFunctionUrlEvent => {
+): FunctionUrlEvent => {
 	return {
 		headers: {
 			"x-signature-ed25519": signature,

@@ -1,14 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import {
-	discordInteractionFunctionUrlEventSchema,
-	discordInteractionSchema,
-} from "./schema.js";
+import { discordInteractionSchema, functionUrlEventSchema } from "./schema.js";
 
-describe("discordInteractionFunctionUrlEventSchema", () => {
+describe("functionUrlEventSchema", () => {
 	it("headers と body と isBase64Encoded を受け付ける", () => {
 		expect(
-			discordInteractionFunctionUrlEventSchema.parse({
+			functionUrlEventSchema.parse({
 				headers: { "x-signature-ed25519": "abc" },
 				body: '{"type":1}',
 				isBase64Encoded: false,
@@ -21,20 +18,20 @@ describe("discordInteractionFunctionUrlEventSchema", () => {
 	});
 
 	it("body と isBase64Encoded は省略できる", () => {
-		expect(
-			discordInteractionFunctionUrlEventSchema.parse({ headers: {} }),
-		).toEqual({ headers: {} });
+		expect(functionUrlEventSchema.parse({ headers: {} })).toEqual({
+			headers: {},
+		});
 	});
 
 	it("headers が欠けたイベントはエラーにする", () => {
 		expect(() => {
-			return discordInteractionFunctionUrlEventSchema.parse({});
+			return functionUrlEventSchema.parse({});
 		}).toThrow();
 	});
 
 	it("headers が record でないイベントはエラーにする", () => {
 		expect(() => {
-			return discordInteractionFunctionUrlEventSchema.parse({ headers: "x" });
+			return functionUrlEventSchema.parse({ headers: "x" });
 		}).toThrow();
 	});
 });
