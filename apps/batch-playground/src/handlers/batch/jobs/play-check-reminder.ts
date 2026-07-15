@@ -12,11 +12,10 @@ import {
 	buildReminderMessage,
 	type ReminderMessage,
 } from "../../../features/play-check-reminder/reminder-message.js";
-import { batchNames } from "../batch-names.js";
 import type { BatchResponse } from "../schemas/response.js";
 import { getPlayCheckReminderSettings } from "./runtime-settings/play-check-reminder-setting-resolver.js";
 
-const logger = createBatchLogger(batchNames.playCheckReminder);
+const logger = createBatchLogger("play-check-reminder");
 
 /** feature のプラットフォーム非依存メッセージを Discord のチャンネル投稿 payload へ変換する。 */
 const toDiscordChannelMessagePayload = (
@@ -74,7 +73,7 @@ export const playCheckReminderJob = async (
 	// 4. Lambda ハンドラーへ共通レスポンスを返す。
 	return {
 		ok: true,
-		job: batchNames.playCheckReminder,
+		job: "play-check-reminder",
 		details: {
 			choiceCount: message.choices.length,
 		},

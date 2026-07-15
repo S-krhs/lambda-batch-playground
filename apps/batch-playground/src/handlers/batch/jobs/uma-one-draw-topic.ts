@@ -4,11 +4,10 @@ import { DiscordWebhookClient } from "@eskra-aws-playground/integration-discord/
 import { createBatchLogger } from "@eskra-aws-playground/libs/logger/batch-logger.js";
 
 import { buildTopicMessage } from "../../../features/uma-one-draw-topic/topic-message.js";
-import { batchNames } from "../batch-names.js";
 import type { BatchResponse } from "../schemas/response.js";
 import { getUmaOneDrawTopicSettings } from "./runtime-settings/uma-one-draw-topic-setting-resolver.js";
 
-const logger = createBatchLogger(batchNames.umaOneDrawTopic);
+const logger = createBatchLogger("uma-one-draw-topic");
 
 /** UMA ワンドロのお題を Discord へ通知するバッチジョブ。 */
 export const umaOneDrawTopicJob = async (
@@ -41,7 +40,7 @@ export const umaOneDrawTopicJob = async (
 	// 4. Lambda ハンドラーへ共通レスポンスを返す。
 	return {
 		ok: true,
-		job: batchNames.umaOneDrawTopic,
+		job: "uma-one-draw-topic",
 		details: {
 			messageLength: message.content.length,
 			notificationSucceeded,

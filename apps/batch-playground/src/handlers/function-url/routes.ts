@@ -47,9 +47,9 @@ const playCheckReminderHandler: InteractionComponentHandler = (
 	}
 };
 
-const componentHandlers: Record<string, InteractionComponentHandler> = {
-	[REMINDER_CUSTOM_ID_PREFIX]: playCheckReminderHandler,
-};
+const componentHandlers = new Map<string, InteractionComponentHandler>([
+	[REMINDER_CUSTOM_ID_PREFIX, playCheckReminderHandler],
+]);
 
 /** custom_id の prefix から担当 feature を解決し、応答内容を作る。 */
 export const resolveComponentInteraction = (
@@ -57,11 +57,14 @@ export const resolveComponentInteraction = (
 	pressedUserId: string,
 ): InteractionReply => {
 	const separatorIndex = customId.indexOf(CUSTOM_ID_PREFIX_SEPARATOR);
-	const prefix =
-		separatorIndex === -1 ? customId : customId.slice(0, separatorIndex);
-	const handler = componentHandlers[prefix];
 
-	if (!handler || separatorIndex === -1) {
+	if (separatorIndex === -1) {
+		return { kind: "unsupported" };
+	}
+
+	const handler = componentHandlers.get(customId.slice(0, separatorIndex));
+
+	if (!handler) {
 		return { kind: "unsupported" };
 	}
 

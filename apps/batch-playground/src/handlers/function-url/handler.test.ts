@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { discordInteractionJob } from "./discord-interaction.js";
+import { handler } from "./handler.js";
 
 const verifier = vi.hoisted(() => {
 	return { verifyInteractionSignature: vi.fn() };
@@ -57,9 +57,9 @@ beforeEach(() => {
 	verifier.verifyInteractionSignature.mockReturnValue(true);
 });
 
-describe("discordInteractionJob", () => {
+describe("handler", () => {
 	it("イベント形式が不正なら 400 を返す", async () => {
-		const response = await discordInteractionJob({ body: "{}" });
+		const response = await handler({ body: "{}" });
 
 		expect(response.statusCode).toBe(400);
 	});
@@ -67,22 +67,20 @@ describe("discordInteractionJob", () => {
 	it("署名検証に失敗したら 401 を返す", async () => {
 		verifier.verifyInteractionSignature.mockReturnValue(false);
 
-		const response = await discordInteractionJob(buildEvent('{"type":1}'));
+		const response = await handler(buildEvent('{"type":1}'));
 
 		expect(response.statusCode).toBe(401);
 	});
 
 	it("PING には PONG を返す", async () => {
-		const response = await discordInteractionJob(buildEvent('{"type":1}'));
+		const response = await handler(buildEvent('{"type":1}'));
 
 		expect(response.statusCode).toBe(200);
 		expect(JSON.parse(response.body)).toEqual({ type: 1 });
 	});
 
 	it("base64 エンコードされた body はデコードした raw body で署名を検証する", async () => {
-		const response = await discordInteractionJob(
-			buildEvent('{"type":1}', { base64: true }),
-		);
+		const response = await handler(buildEvent('{"type":1}', { base64: true }));
 
 		expect(response.statusCode).toBe(200);
 		expect(verifier.verifyInteractionSignature).toHaveBeenCalledWith({
@@ -99,7 +97,7 @@ describe("discordInteractionJob", () => {
 			targetUserId,
 		);
 
-		const response = await discordInteractionJob(buildEvent(rawBody));
+		const response = await handler(buildEvent(rawBody));
 
 		expect(response.statusCode).toBe(200);
 		const responseBody = JSON.parse(response.body);
@@ -114,7 +112,7 @@ describe("discordInteractionJob", () => {
 			otherUserId,
 		);
 
-		const response = await discordInteractionJob(buildEvent(rawBody));
+		const response = await handler(buildEvent(rawBody));
 
 		expect(response.statusCode).toBe(200);
 		const responseBody = JSON.parse(response.body);
@@ -129,7 +127,7 @@ describe("discordInteractionJob", () => {
 			targetUserId,
 		);
 
-		const response = await discordInteractionJob(buildEvent(rawBody));
+		const response = await handler(buildEvent(rawBody));
 
 		expect(response.statusCode).toBe(200);
 		const responseBody = JSON.parse(response.body);
@@ -138,7 +136,7 @@ describe("discordInteractionJob", () => {
 	});
 
 	it("autocomplete には空の候補一覧を返す", async () => {
-		const response = await discordInteractionJob(buildEvent('{"type":4}'));
+		const response = await handler(buildEvent('{"type":4}'));
 
 		expect(response.statusCode).toBe(200);
 		expect(JSON.parse(response.body)).toEqual({
@@ -148,7 +146,7 @@ describe("discordInteractionJob", () => {
 	});
 
 	it("interaction body の JSON が不正なら 400 を返す", async () => {
-		const response = await discordInteractionJob(buildEvent("not-a-json"));
+		const response = await handler(buildEvent("not-a-json"));
 
 		expect(response.statusCode).toBe(400);
 	});
