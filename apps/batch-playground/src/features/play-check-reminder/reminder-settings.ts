@@ -4,25 +4,22 @@
 /** 遊技チェックリマインダーの質問文。 */
 export const REMINDER_QUESTION = "今日は遊技をしましたか？";
 
-/** ボタン custom_id の prefix。custom_id は `play-check-reminder:<targetUserId>:<choiceId>` 形式。 */
+/** 選択肢メッセージの custom_id prefix。残りの形式は Discord protocol が構築する。 */
 export const REMINDER_CUSTOM_ID_PREFIX = "play-check-reminder";
 
-/** custom_id の区切り文字。 */
-export const REMINDER_CUSTOM_ID_SEPARATOR = ":";
-
-/** 選択肢ボタンの見た目 style。Discord のボタン style 値と同じ意味を持つ。 */
-export type ReminderChoiceStyle = 1 | 2 | 3 | 4;
+/** 選択肢ボタンを利用者へどう見せるかを表す意味的なtone。 */
+export type ReminderChoiceTone = "positive" | "negative" | "neutral";
 
 /** 遊技チェックリマインダーの選択肢。 */
 export interface ReminderChoice {
 	id: string;
 	label: string;
-	style: ReminderChoiceStyle;
+	tone: ReminderChoiceTone;
 }
 
 /** 遊技チェックリマインダーの選択肢一覧。 */
 export const REMINDER_CHOICES: readonly ReminderChoice[] = [
-	{ id: "won", label: "はい（勝った）", style: 3 },
-	{ id: "lost", label: "はい（負けた）", style: 4 },
-	{ id: "not-played", label: "いいえ", style: 2 },
+	{ id: "won", label: "はい（勝った）", tone: "positive" },
+	{ id: "lost", label: "はい（負けた）", tone: "negative" },
+	{ id: "not-played", label: "いいえ", tone: "neutral" },
 ];

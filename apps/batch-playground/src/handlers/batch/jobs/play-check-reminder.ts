@@ -1,45 +1,18 @@
 // In scope: 遊技チェックリマインダーの Discord 投稿バッチをオーケストレーションする
 // Out of scope: リマインダーメッセージ生成や Discord Bot API HTTP 通信の詳細を持つ
-import {
-	type DiscordActionRow,
-	DiscordBotClient,
-	type DiscordButtonComponent,
-	type DiscordChannelMessagePayload,
-} from "@eskra-aws-playground/integration-discord/discord-bot-client.js";
+import { DiscordBotClient } from "@eskra-aws-playground/integration-discord/discord-bot-client.js";
 import { createBatchLogger } from "@eskra-aws-playground/libs/logger/batch-logger.js";
 import { Resource } from "sst/resource";
 
+import { buildChoiceMessage } from "../../../external-protocols/discord/discord-message.js";
 import {
-	buildReminderMessage,
-	type ReminderMessage,
-} from "../../../features/play-check-reminder/reminder-message.js";
+	REMINDER_CHOICES,
+	REMINDER_CUSTOM_ID_PREFIX,
+	REMINDER_QUESTION,
+} from "../../../features/play-check-reminder/reminder-settings.js";
 import type { BatchResponse } from "../schema.js";
 
 const logger = createBatchLogger("play-check-reminder");
-
-/** feature のプラットフォーム非依存メッセージを Discord のチャンネル投稿 payload へ変換する。 */
-const toDiscordChannelMessagePayload = (
-	message: ReminderMessage,
-	targetUserId: string,
-): DiscordChannelMessagePayload => {
-	const actionRow: DiscordActionRow = {
-		type: 1,
-		components: message.choices.map((choice): DiscordButtonComponent => {
-			return {
-				type: 2,
-				style: choice.style,
-				label: choice.label,
-				custom_id: choice.customId,
-			};
-		}),
-	};
-
-	return {
-		content: message.content,
-		components: [actionRow],
-		allowed_mentions: { parse: [], users: [targetUserId] },
-	};
-};
 
 /** 遊技チェックリマインダーをボタン付きメッセージとして Discord チャンネルへ投稿するバッチジョブ。 */
 export const playCheckReminderJob = async (
@@ -52,31 +25,28 @@ export const playCheckReminderJob = async (
 
 	logger.start();
 
-	// 2. feature でメンションと選択肢ボタン付きのリマインダーメッセージを生成する。
-	const message = buildReminderMessage(targetUserId);
-
-	// 3. Discord Bot integration へ投稿を委譲する。失敗は throw して Lambda の
-	//    Errors メトリクス経由でアラームへ届ける(非同期リトライは infra 側で 0 に
-	//    設定しているため、throw しても投稿は重複しない)。
+	// 2. 選択肢定義から Discord payload を構築し、integration へ渡して投稿する。
 	try {
 		const botClient = new DiscordBotClient(discordBotToken);
-		await botClient.postChannelMessage(
-			discordChannelId,
-			toDiscordChannelMessagePayload(message, targetUserId),
-		);
+		const payload = buildChoiceMessage(targetUserId, {
+			prompt: REMINDER_QUESTION,
+			customIdPrefix: REMINDER_CUSTOM_ID_PREFIX,
+			choices: REMINDER_CHOICES,
+		});
+		await botClient.postChannelMessage(discordChannelId, payload);
 	} catch (notificationError) {
 		logger.failure(notificationError);
 		throw notificationError;
 	}
 
-	logger.complete({ choiceCount: message.choices.length });
+	logger.complete({ choiceCount: REMINDER_CHOICES.length });
 
-	// 4. Lambda ハンドラーへ共通レスポンスを返す。
+	// 3. Lambda ハンドラーへ共通レスポンスを返す。
 	return {
 		ok: true,
 		job: "play-check-reminder",
 		details: {
-			choiceCount: message.choices.length,
+			choiceCount: REMINDER_CHOICES.length,
 		},
 	};
 };
