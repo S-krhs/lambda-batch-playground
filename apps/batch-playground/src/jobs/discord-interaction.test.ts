@@ -1,44 +1,34 @@
-import { generateKeyPairSync, type KeyObject, sign } from "node:crypto";
-
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { discordInteractionJob } from "./discord-interaction.js";
 
-const settings = vi.hoisted(() => {
-	return { publicKeyHex: "" };
+const verifier = vi.hoisted(() => {
+	return { verifyInteractionSignature: vi.fn() };
 });
+
+vi.mock(
+	"@eskra-aws-playground/integration-discord/interaction-signature-verifier.js",
+	() => {
+		return {
+			verifyInteractionSignature: verifier.verifyInteractionSignature,
+		};
+	},
+);
 
 vi.mock("./runtime-settings/discord-interaction-setting-resolver.js", () => {
 	return {
 		getDiscordInteractionSettings: () => {
-			return { discordInteractionPublicKey: settings.publicKeyHex };
+			return { discordInteractionPublicKey: "test-public-key" };
 		},
 	};
 });
 
 const timestamp = "1720000000";
+const signature = "test-signature";
 const targetUserId = "111111111111111111";
 const otherUserId = "222222222222222222";
 
-let privateKey: KeyObject;
-
-beforeAll(() => {
-	const keyPair = generateKeyPairSync("ed25519");
-	privateKey = keyPair.privateKey;
-	settings.publicKeyHex = keyPair.publicKey
-		.export({ format: "der", type: "spki" })
-		.subarray(-32)
-		.toString("hex");
-});
-
-const buildSignedEvent = (
-	rawBody: string,
-	options: { base64?: boolean; signatureOverride?: string } = {},
-) => {
-	const signature =
-		options.signatureOverride ??
-		sign(null, Buffer.from(timestamp + rawBody), privateKey).toString("hex");
-
+const buildEvent = (rawBody: string, options: { base64?: boolean } = {}) => {
 	return {
 		headers: {
 			"x-signature-ed25519": signature,
@@ -62,6 +52,11 @@ const buildComponentInteractionBody = (
 	});
 };
 
+beforeEach(() => {
+	verifier.verifyInteractionSignature.mockReset();
+	verifier.verifyInteractionSignature.mockReturnValue(true);
+});
+
 describe("discordInteractionJob", () => {
 	it("イベント形式が不正なら 400 を返す", async () => {
 		const response = await discordInteractionJob({ body: "{}" });
@@ -69,32 +64,33 @@ describe("discordInteractionJob", () => {
 		expect(response.statusCode).toBe(400);
 	});
 
-	it("署名が不正なら 401 を返す", async () => {
-		const event = buildSignedEvent('{"type":1}', {
-			signatureOverride: "ab".repeat(64),
-		});
+	it("署名検証に失敗したら 401 を返す", async () => {
+		verifier.verifyInteractionSignature.mockReturnValue(false);
 
-		const response = await discordInteractionJob(event);
+		const response = await discordInteractionJob(buildEvent('{"type":1}'));
 
 		expect(response.statusCode).toBe(401);
 	});
 
 	it("PING には PONG を返す", async () => {
-		const response = await discordInteractionJob(
-			buildSignedEvent('{"type":1}'),
-		);
+		const response = await discordInteractionJob(buildEvent('{"type":1}'));
 
 		expect(response.statusCode).toBe(200);
 		expect(JSON.parse(response.body)).toEqual({ type: 1 });
 	});
 
-	it("base64 エンコードされた body でも署名を検証して処理できる", async () => {
+	it("base64 エンコードされた body はデコードした raw body で署名を検証する", async () => {
 		const response = await discordInteractionJob(
-			buildSignedEvent('{"type":1}', { base64: true }),
+			buildEvent('{"type":1}', { base64: true }),
 		);
 
 		expect(response.statusCode).toBe(200);
-		expect(JSON.parse(response.body)).toEqual({ type: 1 });
+		expect(verifier.verifyInteractionSignature).toHaveBeenCalledWith({
+			publicKey: "test-public-key",
+			signature,
+			timestamp,
+			rawBody: '{"type":1}',
+		});
 	});
 
 	it("対象ユーザーのボタン押下は元メッセージを選択結果へ更新しボタンを取り除く", async () => {
@@ -103,7 +99,7 @@ describe("discordInteractionJob", () => {
 			targetUserId,
 		);
 
-		const response = await discordInteractionJob(buildSignedEvent(rawBody));
+		const response = await discordInteractionJob(buildEvent(rawBody));
 
 		expect(response.statusCode).toBe(200);
 		const responseBody = JSON.parse(response.body);
@@ -118,7 +114,7 @@ describe("discordInteractionJob", () => {
 			otherUserId,
 		);
 
-		const response = await discordInteractionJob(buildSignedEvent(rawBody));
+		const response = await discordInteractionJob(buildEvent(rawBody));
 
 		expect(response.statusCode).toBe(200);
 		const responseBody = JSON.parse(response.body);
@@ -133,7 +129,7 @@ describe("discordInteractionJob", () => {
 			targetUserId,
 		);
 
-		const response = await discordInteractionJob(buildSignedEvent(rawBody));
+		const response = await discordInteractionJob(buildEvent(rawBody));
 
 		expect(response.statusCode).toBe(200);
 		const responseBody = JSON.parse(response.body);
@@ -142,9 +138,7 @@ describe("discordInteractionJob", () => {
 	});
 
 	it("autocomplete には空の候補一覧を返す", async () => {
-		const response = await discordInteractionJob(
-			buildSignedEvent('{"type":4}'),
-		);
+		const response = await discordInteractionJob(buildEvent('{"type":4}'));
 
 		expect(response.statusCode).toBe(200);
 		expect(JSON.parse(response.body)).toEqual({
@@ -154,9 +148,7 @@ describe("discordInteractionJob", () => {
 	});
 
 	it("interaction body の JSON が不正なら 400 を返す", async () => {
-		const response = await discordInteractionJob(
-			buildSignedEvent("not-a-json"),
-		);
+		const response = await discordInteractionJob(buildEvent("not-a-json"));
 
 		expect(response.statusCode).toBe(400);
 	});
