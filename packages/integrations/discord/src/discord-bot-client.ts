@@ -1,6 +1,17 @@
 // In scope: Bot token を使って Discord API のチャンネルへメッセージを投稿する
 // Out of scope: Bot token の解決、メッセージ内容の生成、interaction の応答処理
-import { sanitizeText } from "@eskra-aws-playground/libs/string/text-sanitizer.js";
+import {
+	sanitizeText,
+	type TextReplacement,
+} from "@eskra-aws-playground/libs/string/text-sanitizer.js";
+
+import {
+	type JsonPostResponseDetails,
+	postJson,
+} from "./internal/post-json.js";
+
+/** Discord Bot API 失敗応答の安全化済み詳細。 */
+export type DiscordBotResponseDetails = JsonPostResponseDetails;
 
 const DISCORD_API_BASE_URL = "https://discord.com/api/v10";
 const DISCORD_CHANNEL_ID_PATTERN = /^\d+$/;
@@ -32,12 +43,6 @@ export interface DiscordChannelMessagePayload {
 /** Discord Bot API のメッセージ投稿時に上書きできるオプション。 */
 export interface DiscordBotMessageOptions {
 	timeoutMs?: number;
-}
-
-/** Discord Bot API 失敗応答の安全化済み詳細。 */
-export interface DiscordBotResponseDetails {
-	status: number;
-	body: string;
 }
 
 /** Discord Bot API 連携で発生した失敗を表すエラー。 */
@@ -73,64 +78,33 @@ export class DiscordBotClient {
 			);
 		}
 
-		if (typeof globalThis.fetch !== "function") {
-			throw new DiscordBotError("ランタイムに fetch がありません");
-		}
-
-		const timeoutMs = options.timeoutMs ?? this.defaultTimeoutMs;
-		const controller = new AbortController();
-		const timeoutId = setTimeout(() => {
-			controller.abort();
-		}, timeoutMs);
-
-		let response: Response;
 		try {
-			response = await fetch(
-				`${DISCORD_API_BASE_URL}/channels/${normalizedChannelId}/messages`,
-				{
-					method: "POST",
-					headers: {
-						Authorization: `Bot ${this.botToken}`,
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify(payload),
-					signal: controller.signal,
+			await postJson({
+				url: `${DISCORD_API_BASE_URL}/channels/${normalizedChannelId}/messages`,
+				headers: {
+					Authorization: `Bot ${this.botToken}`,
 				},
-			);
+				payload,
+				timeoutMs: options.timeoutMs ?? this.defaultTimeoutMs,
+				apiLabel: "Discord Bot API",
+				responseBodyReplacements: this.botTokenReplacements(),
+				createError: (message, responseDetails) => {
+					return new DiscordBotError(message, responseDetails);
+				},
+			});
 		} catch (error) {
-			if (error instanceof DOMException && error.name === "AbortError") {
-				throw new DiscordBotError(
-					`Discord Bot API リクエストがタイムアウトしました: ${timeoutMs}ms`,
-					{
-						timeoutMs,
-					},
-				);
-			}
-
 			throw this.sanitizeUnknownError(error);
-		} finally {
-			clearTimeout(timeoutId);
 		}
+	}
 
-		if (!response.ok) {
-			const text = await response.text();
-			const responseDetails: DiscordBotResponseDetails = {
-				status: response.status,
-				body: sanitizeText(text, {
-					replacements: [
-						{
-							pattern: this.botToken,
-							replacement: "[redacted-discord-bot-token]",
-						},
-					],
-				}),
-			};
-
-			throw new DiscordBotError(
-				`Discord Bot API 応答が失敗しました: ${response.status}`,
-				responseDetails,
-			);
-		}
+	/** bot token を秘匿するための置換ルール。 */
+	private botTokenReplacements(): readonly TextReplacement[] {
+		return [
+			{
+				pattern: this.botToken,
+				replacement: "[redacted-discord-bot-token]",
+			},
+		];
 	}
 
 	/** fetch が投げた例外のメッセージから bot token を除去して返す。 */
@@ -138,12 +112,7 @@ export class DiscordBotClient {
 		if (error instanceof Error && error.message.includes(this.botToken)) {
 			return new DiscordBotError(
 				sanitizeText(error.message, {
-					replacements: [
-						{
-							pattern: this.botToken,
-							replacement: "[redacted-discord-bot-token]",
-						},
-					],
+					replacements: this.botTokenReplacements(),
 				}),
 			);
 		}
