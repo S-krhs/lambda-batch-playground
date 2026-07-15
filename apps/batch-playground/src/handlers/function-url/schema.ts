@@ -2,8 +2,9 @@
 // Out of scope: 署名検証、選択結果の判定、応答 body の組み立てを行う
 import { z } from "zod";
 
-/** Function URL Lambda が受け取る Lambda Function URL イベント schema。 */
+/** Function URL Lambda が受け取る Lambda Function URL イベント schema。rawPath で job を振り分ける。 */
 export const functionUrlEventSchema = z.object({
+	rawPath: z.string(),
 	headers: z.record(z.string(), z.string()),
 	body: z.string().optional(),
 	isBase64Encoded: z.boolean().optional(),

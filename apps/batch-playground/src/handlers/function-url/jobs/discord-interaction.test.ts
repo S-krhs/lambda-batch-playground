@@ -32,6 +32,7 @@ const buildEvent = (
 	options: { base64?: boolean } = {},
 ): FunctionUrlEvent => {
 	return {
+		rawPath: "/discord/interactions",
 		headers: {
 			"x-signature-ed25519": signature,
 			"x-signature-timestamp": timestamp,

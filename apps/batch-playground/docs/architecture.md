@@ -11,7 +11,7 @@ Lambda エントリポイント（handler）ごとに `src/handlers/<handler>/` 
 
 | 層 | 置くもの | 置かないもの |
 | --- | --- | --- |
-| `src/handlers/<handler>/handler.ts` | Lambda エントリポイント、起動イベントの envelope 検証、担当 job への解決と委譲 | job 固有の詳細 parse、業務ロジック、外部連携詳細 |
+| `src/handlers/<handler>/handler.ts` | Lambda エントリポイント、起動イベントの envelope 検証、ルーティングキー（batch は `job`、function-url はリクエストパス）から担当 job への解決と委譲 | job 固有の詳細 parse、業務ロジック、外部連携詳細 |
 | `src/handlers/<handler>/routes.ts`（handler 内で複数ルートを持つ場合のみ） | interaction の custom_id prefix など、リクエスト内容から担当 feature への解決 | 各ジョブの処理内容、メッセージ生成、外部 API 詳細 |
 | `src/handlers/<handler>/jobs/` | job 固有のイベント詳細 parse、feature 呼び出し、integration 呼び出し、共通レスポンス作成 | envelope 検証、ルーティング判定、外部 API 詳細 |
 | `src/handlers/<handler>/schema.ts` | その handler の起動イベント・実行 context 検証 schema と応答型 | ジョブ判定、外部サービス固有の型 |

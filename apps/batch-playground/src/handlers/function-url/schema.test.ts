@@ -3,14 +3,16 @@ import { describe, expect, it } from "vitest";
 import { discordInteractionSchema, functionUrlEventSchema } from "./schema.js";
 
 describe("functionUrlEventSchema", () => {
-	it("headers と body と isBase64Encoded を受け付ける", () => {
+	it("rawPath と headers と body と isBase64Encoded を受け付ける", () => {
 		expect(
 			functionUrlEventSchema.parse({
+				rawPath: "/discord/interactions",
 				headers: { "x-signature-ed25519": "abc" },
 				body: '{"type":1}',
 				isBase64Encoded: false,
 			}),
 		).toEqual({
+			rawPath: "/discord/interactions",
 			headers: { "x-signature-ed25519": "abc" },
 			body: '{"type":1}',
 			isBase64Encoded: false,
@@ -18,20 +20,20 @@ describe("functionUrlEventSchema", () => {
 	});
 
 	it("body と isBase64Encoded は省略できる", () => {
-		expect(functionUrlEventSchema.parse({ headers: {} })).toEqual({
-			headers: {},
-		});
+		expect(functionUrlEventSchema.parse({ rawPath: "/", headers: {} })).toEqual(
+			{ rawPath: "/", headers: {} },
+		);
 	});
 
-	it("headers が欠けたイベントはエラーにする", () => {
+	it("rawPath が欠けたイベントはエラーにする", () => {
 		expect(() => {
-			return functionUrlEventSchema.parse({});
+			return functionUrlEventSchema.parse({ headers: {} });
 		}).toThrow();
 	});
 
 	it("headers が record でないイベントはエラーにする", () => {
 		expect(() => {
-			return functionUrlEventSchema.parse({ headers: "x" });
+			return functionUrlEventSchema.parse({ rawPath: "/", headers: "x" });
 		}).toThrow();
 	});
 });
