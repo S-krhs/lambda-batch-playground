@@ -10,23 +10,46 @@ vi.mock("./jobs/discord-interaction.js", () => {
 	return { discordInteractionJob: job.discordInteractionJob };
 });
 
+const buildEvent = (rawPath: string) => {
+	return {
+		rawPath,
+		headers: { "x-signature-ed25519": "abc" },
+		body: '{"type":1}',
+		isBase64Encoded: false,
+	};
+};
+
 beforeEach(() => {
 	job.discordInteractionJob.mockReset();
 });
 
 describe("handler", () => {
-	it("パスに対応する job へ envelope を渡し、その応答を返す", async () => {
-		const response = { statusCode: 200, headers: {}, body: "{}" };
-		job.discordInteractionJob.mockResolvedValue(response);
-		const event = {
-			rawPath: "/discord/interactions",
-			headers: { "x-signature-ed25519": "abc" },
-			body: '{"type":1}',
-			isBase64Encoded: false,
-		};
+	it("job の成功結果を 200 の JSON レスポンスへ組み立てる", async () => {
+		job.discordInteractionJob.mockResolvedValue({
+			ok: true,
+			body: { type: 1 },
+		});
+		const event = buildEvent("/discord/interactions");
 
-		await expect(handler(event)).resolves.toBe(response);
+		const response = await handler(event);
+
 		expect(job.discordInteractionJob).toHaveBeenCalledWith(event);
+		expect(response).toEqual({
+			statusCode: 200,
+			headers: { "Content-Type": "application/json" },
+			body: '{"type":1}',
+		});
+	});
+
+	it("job の失敗理由を HTTP status へ対応づける", async () => {
+		job.discordInteractionJob.mockResolvedValue({
+			ok: false,
+			error: "unauthorized",
+		});
+
+		const response = await handler(buildEvent("/discord/interactions"));
+
+		expect(response.statusCode).toBe(401);
 	});
 
 	it("envelope 形式が不正なら 400 を返し job を呼ばない", async () => {
@@ -37,10 +60,7 @@ describe("handler", () => {
 	});
 
 	it("対応しないパスは 404 を返し job を呼ばない", async () => {
-		const response = await handler({
-			rawPath: "/unknown",
-			headers: {},
-		});
+		const response = await handler({ rawPath: "/unknown", headers: {} });
 
 		expect(response.statusCode).toBe(404);
 		expect(job.discordInteractionJob).not.toHaveBeenCalled();

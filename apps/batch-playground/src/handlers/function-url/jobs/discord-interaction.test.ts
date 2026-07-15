@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { FunctionUrlEvent } from "../schema.js";
+import type { FunctionUrlEvent, FunctionUrlJobResult } from "../schema.js";
 import { discordInteractionJob } from "./discord-interaction.js";
 
 const verifier = vi.hoisted(() => {
@@ -55,33 +55,49 @@ const buildComponentInteractionBody = (
 	});
 };
 
+/** 成功結果であることを確認し、Discord payload を取り出す。 */
+const okBody = (
+	result: FunctionUrlJobResult,
+): {
+	type: number;
+	data?: { components?: unknown[]; content?: string; flags?: number };
+} => {
+	if (!result.ok) {
+		throw new Error(`成功結果を期待したが失敗した: ${result.error}`);
+	}
+
+	return result.body as {
+		type: number;
+		data?: { components?: unknown[]; content?: string; flags?: number };
+	};
+};
+
 beforeEach(() => {
 	verifier.verifyInteractionSignature.mockReset();
 	verifier.verifyInteractionSignature.mockReturnValue(true);
 });
 
 describe("discordInteractionJob", () => {
-	it("署名検証に失敗したら 401 を返す", async () => {
+	it("署名検証に失敗したら unauthorized を返す", async () => {
 		verifier.verifyInteractionSignature.mockReturnValue(false);
 
-		const response = await discordInteractionJob(buildEvent('{"type":1}'));
+		const result = await discordInteractionJob(buildEvent('{"type":1}'));
 
-		expect(response.statusCode).toBe(401);
+		expect(result).toEqual({ ok: false, error: "unauthorized" });
 	});
 
 	it("PING には PONG を返す", async () => {
-		const response = await discordInteractionJob(buildEvent('{"type":1}'));
+		const result = await discordInteractionJob(buildEvent('{"type":1}'));
 
-		expect(response.statusCode).toBe(200);
-		expect(JSON.parse(response.body)).toEqual({ type: 1 });
+		expect(result).toEqual({ ok: true, body: { type: 1 } });
 	});
 
 	it("base64 エンコードされた body はデコードした raw body で署名を検証する", async () => {
-		const response = await discordInteractionJob(
+		const result = await discordInteractionJob(
 			buildEvent('{"type":1}', { base64: true }),
 		);
 
-		expect(response.statusCode).toBe(200);
+		expect(result.ok).toBe(true);
 		expect(verifier.verifyInteractionSignature).toHaveBeenCalledWith({
 			publicKey: "test-public-key",
 			signature,
@@ -96,13 +112,11 @@ describe("discordInteractionJob", () => {
 			targetUserId,
 		);
 
-		const response = await discordInteractionJob(buildEvent(rawBody));
+		const body = okBody(await discordInteractionJob(buildEvent(rawBody)));
 
-		expect(response.statusCode).toBe(200);
-		const responseBody = JSON.parse(response.body);
-		expect(responseBody.type).toBe(7);
-		expect(responseBody.data.components).toEqual([]);
-		expect(responseBody.data.content).toContain("はい（勝った）");
+		expect(body.type).toBe(7);
+		expect(body.data?.components).toEqual([]);
+		expect(body.data?.content).toContain("はい（勝った）");
 	});
 
 	it("対象外ユーザーのボタン押下は本人にだけ見える専用メッセージを返す", async () => {
@@ -111,13 +125,11 @@ describe("discordInteractionJob", () => {
 			otherUserId,
 		);
 
-		const response = await discordInteractionJob(buildEvent(rawBody));
+		const body = okBody(await discordInteractionJob(buildEvent(rawBody)));
 
-		expect(response.statusCode).toBe(200);
-		const responseBody = JSON.parse(response.body);
-		expect(responseBody.type).toBe(4);
-		expect(responseBody.data.flags).toBe(64);
-		expect(responseBody.data.content).toContain(`<@${targetUserId}>`);
+		expect(body.type).toBe(4);
+		expect(body.data?.flags).toBe(64);
+		expect(body.data?.content).toContain(`<@${targetUserId}>`);
 	});
 
 	it("不明な custom_id は対応外の ephemeral メッセージを返す", async () => {
@@ -126,27 +138,24 @@ describe("discordInteractionJob", () => {
 			targetUserId,
 		);
 
-		const response = await discordInteractionJob(buildEvent(rawBody));
+		const body = okBody(await discordInteractionJob(buildEvent(rawBody)));
 
-		expect(response.statusCode).toBe(200);
-		const responseBody = JSON.parse(response.body);
-		expect(responseBody.type).toBe(4);
-		expect(responseBody.data.flags).toBe(64);
+		expect(body.type).toBe(4);
+		expect(body.data?.flags).toBe(64);
 	});
 
 	it("autocomplete には空の候補一覧を返す", async () => {
-		const response = await discordInteractionJob(buildEvent('{"type":4}'));
+		const result = await discordInteractionJob(buildEvent('{"type":4}'));
 
-		expect(response.statusCode).toBe(200);
-		expect(JSON.parse(response.body)).toEqual({
-			type: 8,
-			data: { choices: [] },
+		expect(result).toEqual({
+			ok: true,
+			body: { type: 8, data: { choices: [] } },
 		});
 	});
 
-	it("interaction body の JSON が不正なら 400 を返す", async () => {
-		const response = await discordInteractionJob(buildEvent("not-a-json"));
+	it("interaction body の JSON が不正なら invalid-request を返す", async () => {
+		const result = await discordInteractionJob(buildEvent("not-a-json"));
 
-		expect(response.statusCode).toBe(400);
+		expect(result).toEqual({ ok: false, error: "invalid-request" });
 	});
 });

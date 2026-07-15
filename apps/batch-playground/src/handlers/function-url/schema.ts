@@ -40,6 +40,14 @@ export const discordInteractionSchema = z.object({
 /** リクエストの生 body をパースした Discord interaction。 */
 export type DiscordInteraction = z.infer<typeof discordInteractionSchema>;
 
+/** job の失敗理由。HTTP status への対応づけは handler が行う。 */
+export type FunctionUrlJobError = "unauthorized" | "invalid-request";
+
+/** job の内部処理結果。成功時は応答 payload、失敗時は失敗理由を持つ。 */
+export type FunctionUrlJobResult =
+	| { ok: true; body: unknown }
+	| { ok: false; error: FunctionUrlJobError };
+
 /** Function URL Lambda が Lambda Function URL へ返す HTTP レスポンス。 */
 export interface FunctionUrlResponse {
 	statusCode: number;
