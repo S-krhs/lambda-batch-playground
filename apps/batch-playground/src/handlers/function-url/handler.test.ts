@@ -2,12 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { handler } from "./handler.js";
 
-const job = vi.hoisted(() => {
-	return { discordInteractionJob: vi.fn() };
+const route = vi.hoisted(() => {
+	return { discordInteractionRoute: vi.fn() };
 });
 
-vi.mock("./jobs/discord-interaction.js", () => {
-	return { discordInteractionJob: job.discordInteractionJob };
+vi.mock("./routes/discord-interaction/route.js", () => {
+	return { discordInteractionRoute: route.discordInteractionRoute };
 });
 
 const buildEvent = (rawPath: string) => {
@@ -20,20 +20,21 @@ const buildEvent = (rawPath: string) => {
 };
 
 beforeEach(() => {
-	job.discordInteractionJob.mockReset();
+	route.discordInteractionRoute.mockReset();
 });
 
 describe("handler", () => {
-	it("job の成功結果を 200 の JSON レスポンスへ組み立てる", async () => {
-		job.discordInteractionJob.mockResolvedValue({
-			ok: true,
-			body: { type: 1 },
+	it("path に対応する route の HTTP response をそのまま返す", async () => {
+		route.discordInteractionRoute.mockResolvedValue({
+			statusCode: 200,
+			headers: { "Content-Type": "application/json" },
+			body: '{"type":1}',
 		});
 		const event = buildEvent("/discord/interactions");
 
 		const response = await handler(event);
 
-		expect(job.discordInteractionJob).toHaveBeenCalledWith(event);
+		expect(route.discordInteractionRoute).toHaveBeenCalledWith(event);
 		expect(response).toEqual({
 			statusCode: 200,
 			headers: { "Content-Type": "application/json" },
@@ -41,10 +42,11 @@ describe("handler", () => {
 		});
 	});
 
-	it("job の失敗理由を HTTP status へ対応づける", async () => {
-		job.discordInteractionJob.mockResolvedValue({
-			ok: false,
-			error: "unauthorized",
+	it("route のエラー response をそのまま返す", async () => {
+		route.discordInteractionRoute.mockResolvedValue({
+			statusCode: 401,
+			headers: { "Content-Type": "application/json" },
+			body: '{"error":"署名が不正です。"}',
 		});
 
 		const response = await handler(buildEvent("/discord/interactions"));
@@ -52,17 +54,17 @@ describe("handler", () => {
 		expect(response.statusCode).toBe(401);
 	});
 
-	it("envelope 形式が不正なら 400 を返し job を呼ばない", async () => {
+	it("envelope 形式が不正なら 400 を返し route を呼ばない", async () => {
 		const response = await handler({ headers: {} });
 
 		expect(response.statusCode).toBe(400);
-		expect(job.discordInteractionJob).not.toHaveBeenCalled();
+		expect(route.discordInteractionRoute).not.toHaveBeenCalled();
 	});
 
-	it("対応しないパスは 404 を返し job を呼ばない", async () => {
+	it("対応しないパスは 404 を返し route を呼ばない", async () => {
 		const response = await handler({ rawPath: "/unknown", headers: {} });
 
 		expect(response.statusCode).toBe(404);
-		expect(job.discordInteractionJob).not.toHaveBeenCalled();
+		expect(route.discordInteractionRoute).not.toHaveBeenCalled();
 	});
 });
