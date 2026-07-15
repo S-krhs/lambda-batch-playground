@@ -55,24 +55,21 @@ export const playCheckReminderJob = async (
 	// 2. feature でメンションと選択肢ボタン付きのリマインダーメッセージを生成する。
 	const message = buildReminderMessage(targetUserId);
 
-	// 3. Discord Bot integration へ投稿を委譲する。失敗しても throw せず、
-	//    Lambda 非同期リトライによる重複投稿を防ぐ。
-	let notificationSucceeded = false;
+	// 3. Discord Bot integration へ投稿を委譲する。失敗は throw して Lambda の
+	//    Errors メトリクス経由でアラームへ届ける(非同期リトライは infra 側で 0 に
+	//    設定しているため、throw しても投稿は重複しない)。
 	try {
 		const botClient = new DiscordBotClient(discordBotToken);
 		await botClient.postChannelMessage(
 			discordChannelId,
 			toDiscordChannelMessagePayload(message, targetUserId),
 		);
-		notificationSucceeded = true;
 	} catch (notificationError) {
-		logger.failure(notificationError, { retryable: false });
+		logger.failure(notificationError);
+		throw notificationError;
 	}
 
-	logger.complete({
-		choiceCount: message.choices.length,
-		notificationSucceeded,
-	});
+	logger.complete({ choiceCount: message.choices.length });
 
 	// 4. Lambda ハンドラーへ共通レスポンスを返す。
 	return {
@@ -80,7 +77,6 @@ export const playCheckReminderJob = async (
 		job: batchNames.playCheckReminder,
 		details: {
 			choiceCount: message.choices.length,
-			notificationSucceeded,
 		},
 	};
 };

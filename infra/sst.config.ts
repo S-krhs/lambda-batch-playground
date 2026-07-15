@@ -108,6 +108,13 @@ export default $config({
 			],
 		});
 
+		// scheduler からの非同期起動に対する Lambda 自体の自動リトライ(既定 2 回)を止める。
+		// これにより job は失敗を throw して Errors アラームへ届けても Discord 投稿が重複しない
+		new aws.lambda.FunctionEventInvokeConfig("BatchFunctionEventInvokeConfig", {
+			functionName: batchFunction.name,
+			maximumRetryAttempts: 0,
+		});
+
 		// batch Lambda が env で role ARN を参照するため、循環参照を避けて invoke 権限は別リソースで付与する
 		new aws.iam.RolePolicy("UmaOneDrawTopicScheduleRolePolicy", {
 			role: umaOneDrawTopicScheduleRole.id,
