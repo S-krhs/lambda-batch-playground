@@ -1,15 +1,12 @@
 // In scope: Lambda イベントからジョブ名を推定し、登録済みジョブのハンドラーへ解決する
 // Out of scope: 個別ジョブの処理内容や外部連携の詳細を持つ
-import { playCheckReminderJob } from "../jobs/play-check-reminder.js";
-import { umaOneDrawTopicJob } from "../jobs/uma-one-draw-topic.js";
-import { umaOneDrawTopicSchedulerJob } from "../jobs/uma-one-draw-topic-scheduler.js";
-import {
-	type BatchName,
-	batchNameList,
-	batchNames,
-} from "../shared/routes/batch-names.js";
-import { batchEventSchema } from "../shared/schemas/lambda/batch/event.js";
-import type { BatchResponse } from "../shared/schemas/lambda/batch/response.js";
+
+import { type BatchName, batchNameList, batchNames } from "./batch-names.js";
+import { playCheckReminderJob } from "./jobs/play-check-reminder.js";
+import { umaOneDrawTopicJob } from "./jobs/uma-one-draw-topic.js";
+import { umaOneDrawTopicSchedulerJob } from "./jobs/uma-one-draw-topic-scheduler.js";
+import { batchEventSchema } from "./schemas/event.js";
+import type { BatchResponse } from "./schemas/response.js";
 
 /** ジョブ名に対応して実行されるバッチジョブ関数。context には Lambda context を渡す。 */
 export type BatchJob = (

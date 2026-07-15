@@ -3,9 +3,9 @@
 import { OneTimeScheduleClient } from "@eskra-aws-playground/integration-scheduler/one-time-schedule-client.js";
 import { createBatchLogger } from "@eskra-aws-playground/libs/logger/batch-logger.js";
 
-import { planOneTimeInvocation } from "../features/uma-one-draw-topic-scheduler/one-time-invocation-plan.js";
-import { batchNames } from "../shared/routes/batch-names.js";
-import type { BatchResponse } from "../shared/schemas/lambda/batch/response.js";
+import { planOneTimeInvocation } from "../../../features/uma-one-draw-topic-scheduler/one-time-invocation-plan.js";
+import { batchNames } from "../batch-names.js";
+import type { BatchResponse } from "../schemas/response.js";
 import {
 	getUmaOneDrawTopicSchedulerSettings,
 	resolveTargetFunctionArn,

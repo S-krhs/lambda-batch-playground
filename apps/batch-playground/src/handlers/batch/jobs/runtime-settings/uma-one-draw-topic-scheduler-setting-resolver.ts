@@ -1,6 +1,6 @@
 // In scope: UMA ワンドロお題 scheduler job が使う実行時設定の型と、SST が設定する環境変数・Lambda context からの解決を提供する
 // Out of scope: Lambda イベント解釈、起動時刻の決定、schedule の登録を行う
-import { batchContextSchema } from "../../shared/schemas/lambda/batch/context.js";
+import { batchContextSchema } from "../../schemas/context.js";
 
 /** UMA ワンドロお題 scheduler job が使う実行時設定。 */
 export interface UmaOneDrawTopicSchedulerSettings {

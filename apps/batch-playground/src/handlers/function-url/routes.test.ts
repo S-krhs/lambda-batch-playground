@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveComponentInteraction } from "./interaction-router.js";
+import { resolveComponentInteraction } from "./routes.js";
 
 describe("resolveComponentInteraction", () => {
 	it("play-check-reminder prefix の選択押下は update-message を返す", () => {

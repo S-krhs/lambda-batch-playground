@@ -4,8 +4,8 @@ import {
 	buildNotTargetEphemeralContent,
 	buildSelectedUpdateContent,
 	resolveInteractionSelection,
-} from "../features/play-check-reminder/interaction-selection.js";
-import { REMINDER_CUSTOM_ID_PREFIX } from "../features/play-check-reminder/reminder-settings.js";
+} from "../../features/play-check-reminder/interaction-selection.js";
+import { REMINDER_CUSTOM_ID_PREFIX } from "../../features/play-check-reminder/reminder-settings.js";
 
 /** custom_id は `<prefix>:<feature 固有 payload>` 形式。prefix で担当 feature を判別する。 */
 const CUSTOM_ID_PREFIX_SEPARATOR = ":";

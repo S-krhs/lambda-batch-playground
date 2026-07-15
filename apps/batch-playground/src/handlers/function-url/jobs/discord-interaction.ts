@@ -3,13 +3,13 @@
 import { verifyInteractionSignature } from "@eskra-aws-playground/integration-discord/interaction-signature-verifier.js";
 import { createBatchLogger } from "@eskra-aws-playground/libs/logger/batch-logger.js";
 
-import { resolveComponentInteraction } from "../routing/interaction-router.js";
+import { resolveComponentInteraction } from "../routes.js";
 import {
 	type DiscordInteraction,
 	discordInteractionFunctionUrlEventSchema,
 	discordInteractionSchema,
-} from "../shared/schemas/lambda/discord-interaction/event.js";
-import type { DiscordInteractionResponse } from "../shared/schemas/lambda/discord-interaction/response.js";
+} from "../schemas/event.js";
+import type { DiscordInteractionResponse } from "../schemas/response.js";
 import { getDiscordInteractionSettings } from "./runtime-settings/discord-interaction-setting-resolver.js";
 
 const logger = createBatchLogger("discord-interaction");

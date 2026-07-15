@@ -2,7 +2,7 @@
 // Out of scope: Lambda function 本体やイベントルーティングの定義
 
 import { batchNames as animeBatchNames } from "../../apps/batch-anime-analysis/src/shared/routes/batch-names.js";
-import { batchNames as playgroundBatchNames } from "../../apps/batch-playground/src/shared/routes/batch-names.js";
+import { batchNames as playgroundBatchNames } from "../../apps/batch-playground/src/handlers/batch/batch-names.js";
 
 /** schedule 起動する batch job 1 件分のスケジュール設定。CronV2 へ spread して使う。 */
 export type JobSchedule = {

@@ -3,9 +3,9 @@
 import { DiscordWebhookClient } from "@eskra-aws-playground/integration-discord/discord-webhook-client.js";
 import { createBatchLogger } from "@eskra-aws-playground/libs/logger/batch-logger.js";
 
-import { buildTopicMessage } from "../features/uma-one-draw-topic/topic-message.js";
-import { batchNames } from "../shared/routes/batch-names.js";
-import type { BatchResponse } from "../shared/schemas/lambda/batch/response.js";
+import { buildTopicMessage } from "../../../features/uma-one-draw-topic/topic-message.js";
+import { batchNames } from "../batch-names.js";
+import type { BatchResponse } from "../schemas/response.js";
 import { getUmaOneDrawTopicSettings } from "./runtime-settings/uma-one-draw-topic-setting-resolver.js";
 
 const logger = createBatchLogger(batchNames.umaOneDrawTopic);

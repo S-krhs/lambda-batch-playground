@@ -11,9 +11,9 @@ import { createBatchLogger } from "@eskra-aws-playground/libs/logger/batch-logge
 import {
 	buildReminderMessage,
 	type ReminderMessage,
-} from "../features/play-check-reminder/reminder-message.js";
-import { batchNames } from "../shared/routes/batch-names.js";
-import type { BatchResponse } from "../shared/schemas/lambda/batch/response.js";
+} from "../../../features/play-check-reminder/reminder-message.js";
+import { batchNames } from "../batch-names.js";
+import type { BatchResponse } from "../schemas/response.js";
 import { getPlayCheckReminderSettings } from "./runtime-settings/play-check-reminder-setting-resolver.js";
 
 const logger = createBatchLogger(batchNames.playCheckReminder);

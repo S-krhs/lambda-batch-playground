@@ -78,7 +78,7 @@ export default $config({
 
 		// Lambda バッチの共通エントリポイントを作成
 		const batchFunction = new sst.aws.Function("BatchFunction", {
-			handler: "../apps/batch-playground/src/handlers/batch.handler",
+			handler: "../apps/batch-playground/src/handlers/batch/handler.handler",
 			runtime: "nodejs22.x",
 			timeout: "30 seconds",
 			memory: "128 MB",
@@ -152,7 +152,8 @@ export default $config({
 		// 公開エンドポイントはこの 1 つに集約する(現状は Discord interaction が唯一のルート)。
 		// Function URL を Discord Developer Portal の Interactions Endpoint URL に設定する
 		const functionUrlFunction = new sst.aws.Function("FunctionUrlFunction", {
-			handler: "../apps/batch-playground/src/handlers/function-url.handler",
+			handler:
+				"../apps/batch-playground/src/handlers/function-url/handler.handler",
 			runtime: "nodejs22.x",
 			timeout: "10 seconds",
 			memory: "128 MB",

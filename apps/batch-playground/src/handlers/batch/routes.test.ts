@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
-
-import { playCheckReminderJob } from "../jobs/play-check-reminder.js";
-import { umaOneDrawTopicJob } from "../jobs/uma-one-draw-topic.js";
-import { umaOneDrawTopicSchedulerJob } from "../jobs/uma-one-draw-topic-scheduler.js";
-import { batchNames } from "../shared/routes/batch-names.js";
-import { getJobName, resolveBatchJob } from "./batch-router.js";
+import { batchNames } from "./batch-names.js";
+import { playCheckReminderJob } from "./jobs/play-check-reminder.js";
+import { umaOneDrawTopicJob } from "./jobs/uma-one-draw-topic.js";
+import { umaOneDrawTopicSchedulerJob } from "./jobs/uma-one-draw-topic-scheduler.js";
+import { getJobName, resolveBatchJob } from "./routes.js";
 
 describe("batch-router", () => {
 	it("イベントの job を許可済み route に正規化する", () => {
