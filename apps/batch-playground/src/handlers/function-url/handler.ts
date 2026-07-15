@@ -2,9 +2,9 @@
 // Out of scope: 署名検証アルゴリズムや選択結果の判定ロジックの詳細を持つ
 import { verifyInteractionSignature } from "@eskra-aws-playground/integration-discord/interaction-signature-verifier.js";
 import { createBatchLogger } from "@eskra-aws-playground/libs/logger/batch-logger.js";
+import { Resource } from "sst/resource";
 
 import { resolveComponentInteraction } from "./routes.js";
-import { getDiscordInteractionSettings } from "./runtime-settings/discord-interaction-setting-resolver.js";
 import {
 	discordInteractionFunctionUrlEventSchema,
 	discordInteractionSchema,
@@ -51,8 +51,9 @@ const ephemeralResponse = (content: string): DiscordInteractionResponse => {
 export const handler = async (
 	event: unknown = {},
 ): Promise<DiscordInteractionResponse> => {
-	// 1. 実行時設定から Discord application の public key を解決する。
-	const { discordInteractionPublicKey } = getDiscordInteractionSettings();
+	// 1. SST link から Discord application の public key を解決する。
+	const discordInteractionPublicKey =
+		Resource.DiscordInteractionPublicKey.value;
 
 	logger.start();
 

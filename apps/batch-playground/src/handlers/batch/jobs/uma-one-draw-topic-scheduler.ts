@@ -4,11 +4,8 @@ import { OneTimeScheduleClient } from "@eskra-aws-playground/integration-schedul
 import { createBatchLogger } from "@eskra-aws-playground/libs/logger/batch-logger.js";
 
 import { planOneTimeInvocation } from "../../../features/uma-one-draw-topic-scheduler/one-time-invocation-plan.js";
+import { batchContextSchema } from "../schemas/context.js";
 import type { BatchResponse } from "../schemas/response.js";
-import {
-	getUmaOneDrawTopicSchedulerSettings,
-	resolveTargetFunctionArn,
-} from "./runtime-settings/uma-one-draw-topic-scheduler-setting-resolver.js";
 
 const logger = createBatchLogger("uma-one-draw-topic-scheduler");
 
@@ -17,10 +14,21 @@ export const umaOneDrawTopicSchedulerJob = async (
 	_event: unknown,
 	context?: unknown,
 ): Promise<BatchResponse> => {
-	// 1. 実行時設定から schedule group・role・起動対象 Lambda の ARN を解決する。
-	const { scheduleGroupName, schedulerRoleArn } =
-		getUmaOneDrawTopicSchedulerSettings();
-	const targetFunctionArn = resolveTargetFunctionArn(context);
+	// 1. SST が設定する環境変数から schedule group・role を、Lambda context から起動対象の ARN を解決する。
+	const scheduleGroupName = process.env.UMA_ONE_DRAW_TOPIC_SCHEDULE_GROUP_NAME;
+	const schedulerRoleArn = process.env.UMA_ONE_DRAW_TOPIC_SCHEDULER_ROLE_ARN;
+
+	if (!scheduleGroupName || !schedulerRoleArn) {
+		throw new Error("scheduler の実行時設定(環境変数)が設定されていません。");
+	}
+
+	const parsedContext = batchContextSchema.safeParse(context);
+
+	if (!parsedContext.success) {
+		throw new Error("Lambda context から起動対象の ARN を解決できません。");
+	}
+
+	const targetFunctionArn = parsedContext.data.invokedFunctionArn;
 
 	logger.start();
 

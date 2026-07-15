@@ -7,13 +7,13 @@ import {
 	type DiscordChannelMessagePayload,
 } from "@eskra-aws-playground/integration-discord/discord-bot-client.js";
 import { createBatchLogger } from "@eskra-aws-playground/libs/logger/batch-logger.js";
+import { Resource } from "sst/resource";
 
 import {
 	buildReminderMessage,
 	type ReminderMessage,
 } from "../../../features/play-check-reminder/reminder-message.js";
 import type { BatchResponse } from "../schemas/response.js";
-import { getPlayCheckReminderSettings } from "./runtime-settings/play-check-reminder-setting-resolver.js";
 
 const logger = createBatchLogger("play-check-reminder");
 
@@ -45,9 +45,10 @@ const toDiscordChannelMessagePayload = (
 export const playCheckReminderJob = async (
 	_event: unknown,
 ): Promise<BatchResponse> => {
-	// 1. 実行時設定から Bot token・投稿先チャンネル ID・対象ユーザー ID を解決する。
-	const { discordBotToken, discordChannelId, targetUserId } =
-		getPlayCheckReminderSettings();
+	// 1. SST link から Bot token・投稿先チャンネル ID・対象ユーザー ID を解決する。
+	const discordBotToken = Resource.DiscordBotToken.value;
+	const discordChannelId = Resource.PlayCheckReminderDiscordChannelId.value;
+	const targetUserId = Resource.PlayCheckReminderTargetUserId.value;
 
 	logger.start();
 

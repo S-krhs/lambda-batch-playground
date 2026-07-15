@@ -2,10 +2,10 @@
 // Out of scope: お題メッセージ生成や Discord Webhook HTTP 通信の詳細を持つ
 import { DiscordWebhookClient } from "@eskra-aws-playground/integration-discord/discord-webhook-client.js";
 import { createBatchLogger } from "@eskra-aws-playground/libs/logger/batch-logger.js";
+import { Resource } from "sst/resource";
 
 import { buildTopicMessage } from "../../../features/uma-one-draw-topic/topic-message.js";
 import type { BatchResponse } from "../schemas/response.js";
-import { getUmaOneDrawTopicSettings } from "./runtime-settings/uma-one-draw-topic-setting-resolver.js";
 
 const logger = createBatchLogger("uma-one-draw-topic");
 
@@ -13,8 +13,8 @@ const logger = createBatchLogger("uma-one-draw-topic");
 export const umaOneDrawTopicJob = async (
 	_event: unknown,
 ): Promise<BatchResponse> => {
-	// 1. 実行時設定から送信先 Discord Webhook URL を解決する。
-	const { discordWebhookUrl } = getUmaOneDrawTopicSettings();
+	// 1. SST link から送信先 Discord Webhook URL を解決する。
+	const discordWebhookUrl = Resource.UmaOneDrawTopicDiscordWebhook.value;
 
 	logger.start();
 

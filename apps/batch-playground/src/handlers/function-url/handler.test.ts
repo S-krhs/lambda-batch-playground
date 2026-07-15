@@ -15,11 +15,9 @@ vi.mock(
 	},
 );
 
-vi.mock("./runtime-settings/discord-interaction-setting-resolver.js", () => {
+vi.mock("sst/resource", () => {
 	return {
-		getDiscordInteractionSettings: () => {
-			return { discordInteractionPublicKey: "test-public-key" };
-		},
+		Resource: { DiscordInteractionPublicKey: { value: "test-public-key" } },
 	};
 });
 

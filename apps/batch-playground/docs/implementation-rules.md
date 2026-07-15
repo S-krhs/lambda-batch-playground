@@ -7,8 +7,8 @@
 
 - ジョブ名は実行内容が分かるバッチ名にする。例: `uma-one-draw-topic`
 - `src/handlers/batch/handler.ts` の `batchJobs` にジョブ名とジョブを追加する。
-- ジョブ handler は実行時設定の解決、feature 呼び出し、integration 呼び出し、共通レスポンス作成に集中する。
-- job ごとの実行時設定の解決は、handler ツリー内の `runtime-settings/<job>-setting-resolver.ts` に置く。
+- ジョブ handler は実行時設定の取得、feature 呼び出し、integration 呼び出し、共通レスポンス作成に集中する。
+- linked secret は `Resource.<name>.value`、環境変数は `process.env.<NAME>` を handler / job 内で直接読む。secret の型は package root の `sst-resource-links.d.ts` に宣言を追加する。
 - オーケストレーション手順は、処理セクションごとに 1 行コメントを残す。
 - 新しいジョブを追加したら、app `README.md` の実行できるジョブと環境変数を更新する。
 
@@ -16,7 +16,7 @@
 
 - 起動イベントは `unknown` として受け取り、schema で検証・正規化してから使う。
 - レスポンスは `BatchResponse` に合わせ、呼び出し元が機械的に扱える形にする。
-- 境界データの型・契約は `src/handlers/<handler>/schemas/` に置く（`event.ts`・`response.ts`）。実行時設定の型と解決は handler ツリー内の `runtime-settings/` に置き、外部システムと話す実装は `packages/integrations/*` に置く。
+- 境界データの型・契約は `src/handlers/<handler>/schemas/` に置き、外部システムと話す実装は `packages/integrations/*` に置く。
 - `details` には調査に役立つ安全な情報だけを入れる。
 - 開始/終了ログには、ジョブ名や URL の有無など安全な値だけを出す。
 - 設定不足、入力不備、外部 API 失敗はエラーメッセージで区別できるようにする。
