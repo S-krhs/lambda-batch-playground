@@ -4,7 +4,7 @@ import { DiscordBotClient } from "@eskra-aws-playground/integration-discord/disc
 import { createBatchLogger } from "@eskra-aws-playground/libs/logger/batch-logger.js";
 import { Resource } from "sst/resource";
 
-import { buildChoiceMessage } from "../../../external-protocols/discord/discord-message.js";
+import { buildChoiceMessage } from "../../../external-protocols/discord-message/build.js";
 import {
 	REMINDER_CHOICES,
 	REMINDER_CUSTOM_ID_PREFIX,

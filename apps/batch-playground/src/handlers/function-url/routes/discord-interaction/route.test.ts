@@ -8,7 +8,7 @@ const verifier = vi.hoisted(() => {
 });
 
 vi.mock(
-	"../../../../external-protocols/discord/verify-interaction-signature.js",
+	"../../../../external-protocols/discord-signature/verify-interaction-signature.js",
 	() => {
 		return {
 			verifyInteractionSignature: verifier.verifyInteractionSignature,
