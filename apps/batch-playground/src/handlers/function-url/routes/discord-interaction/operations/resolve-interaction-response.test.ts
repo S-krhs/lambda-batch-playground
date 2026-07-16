@@ -47,8 +47,7 @@ describe("resolveInteractionResponse", () => {
 			data: {
 				type: 7,
 				data: {
-					content:
-						"でれれれれれ～、**はい（勝った）！**",
+					content: "でれれれれれ～、**はい（勝った）！**",
 					components: [],
 					allowed_mentions: { parse: [] },
 				},
@@ -61,7 +60,9 @@ describe("resolveInteractionResponse", () => {
 			resolve(componentBody("play-check-reminder:123:won", "999")),
 		).toEqual({
 			kind: "FORBIDDEN",
-			data: ephemeral("このリマインダーは <@123> さんしか使えないのです～、よよよ……"),
+			data: ephemeral(
+				"このリマインダーは <@123> さんしか使えないのです～、よよよ……",
+			),
 		});
 	});
 
