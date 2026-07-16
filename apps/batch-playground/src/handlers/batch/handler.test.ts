@@ -57,7 +57,9 @@ describe("handler", () => {
 	});
 
 	it("job が未設定ならエラーにする", async () => {
-		await expect(handler({})).rejects.toThrow("有効な job が指定されていません");
+		await expect(handler({})).rejects.toThrow(
+			"有効な job が指定されていません",
+		);
 	});
 
 	it("job が string でないイベントもエラーにする", async () => {
