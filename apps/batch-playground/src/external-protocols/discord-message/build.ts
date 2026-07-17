@@ -16,12 +16,20 @@ const MESSAGE_FLAG_EPHEMERAL = 64;
 export type DiscordInteractionResponse =
 	| { kind: "pong" }
 	| { kind: "update-message"; content: string }
+	| { kind: "channel-message"; content: string }
 	| { kind: "ephemeral"; content: string }
 	| { kind: "empty-autocomplete" };
 
 /** Discord interaction callback の payload。 */
 export type DiscordInteractionResponsePayload =
 	| { type: 1 }
+	| {
+			type: 4;
+			data: {
+				content: string;
+				allowed_mentions: { parse: readonly string[] };
+			};
+	  }
 	| {
 			type: 4;
 			data: {
@@ -88,6 +96,14 @@ export const buildInteractionResponse = (
 				data: {
 					content: response.content,
 					components: [],
+					allowed_mentions: { parse: [] },
+				},
+			};
+		case "channel-message":
+			return {
+				type: RESPONSE_TYPE_CHANNEL_MESSAGE,
+				data: {
+					content: response.content,
 					allowed_mentions: { parse: [] },
 				},
 			};

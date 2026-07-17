@@ -7,6 +7,7 @@ import { CUSTOM_ID_SEPARATOR, type DiscordChoiceDefinition } from "./choice.js";
 /** Discord interaction type。 */
 export const DISCORD_INTERACTION_TYPES = {
 	PING: 1,
+	APPLICATION_COMMAND: 2,
 	MESSAGE_COMPONENT: 3,
 	APPLICATION_COMMAND_AUTOCOMPLETE: 4,
 } as const;
@@ -14,6 +15,7 @@ export const DISCORD_INTERACTION_TYPES = {
 /** Parse 済み Discord interaction。 */
 export interface DiscordInteraction {
 	type: number;
+	commandName?: string;
 	customId?: string;
 	pressedUserId?: string;
 }
@@ -28,7 +30,9 @@ export interface DiscordChoiceSelection {
 
 const interactionBodySchema = z.object({
 	type: z.number(),
-	data: z.object({ custom_id: z.string().optional() }).optional(),
+	data: z
+		.object({ name: z.string().optional(), custom_id: z.string().optional() })
+		.optional(),
 	member: z
 		.object({ user: z.object({ id: z.string() }).optional() })
 		.optional(),
@@ -53,6 +57,7 @@ export const parseInteraction = (
 
 	return {
 		type: parsed.data.type,
+		commandName: parsed.data.data?.name,
 		customId: parsed.data.data?.custom_id,
 		pressedUserId: parsed.data.member?.user?.id ?? parsed.data.user?.id,
 	};
