@@ -50,3 +50,10 @@ jobs:
           SST_SECRET_DiscordInteractionPublicKey: ${{ secrets.DISCORD_INTERACTION_PUBLIC_KEY }}
           SST_SECRET_PlayCheckReminderDiscordChannelId: ${{ secrets.PLAY_CHECK_REMINDER_DISCORD_CHANNEL_ID }}
           SST_SECRET_PlayCheckReminderTargetUserId: ${{ secrets.PLAY_CHECK_REMINDER_TARGET_USER_ID }}
+      # deploy 済みのエンドポイントへ宣言済みスラッシュコマンドを bulk overwrite で同期する
+      - name: Sync Discord commands
+        run: npm run discord:sync
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_APPLICATION_ID }}
+          DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}

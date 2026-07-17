@@ -1,19 +1,21 @@
-// In scope: Discord API への JSON POST の timeout 制御・応答検査・エラー整形を共通化する
+// In scope: Discord API への JSON 送信(POST/PUT)の timeout 制御・応答検査・エラー整形を共通化する
 // Out of scope: 各 API 固有の URL 組み立て、認証情報の解決、payload 生成を行う
 import {
 	sanitizeText,
 	type TextReplacement,
 } from "@eskra-aws-playground/libs/string/text-sanitizer.js";
 
-/** JSON POST 失敗応答の安全化済み詳細。 */
-export interface JsonPostResponseDetails {
+/** JSON 送信の失敗応答の安全化済み詳細。 */
+export interface JsonResponseDetails {
 	status: number;
 	body: string;
 }
 
-/** JSON POST の実行に必要な入力。 */
-export interface JsonPostRequest {
+/** JSON 送信の実行に必要な入力。 */
+export interface JsonSendRequest {
 	url: string;
+	/** HTTP メソッド。一覧の総入れ替えなど冪等な更新には PUT を使う。 */
+	method: "POST" | "PUT";
 	headers?: Record<string, string>;
 	payload: unknown;
 	timeoutMs: number;
@@ -25,10 +27,11 @@ export interface JsonPostRequest {
 	createError: (message: string, responseDetails?: unknown) => Error;
 }
 
-/** JSON payload を timeout 付きで POST し、失敗を API 固有のエラーにして投げる。 */
-export const postJson = async (request: JsonPostRequest): Promise<void> => {
+/** JSON payload を timeout 付きで送信し、失敗を API 固有のエラーにして投げる。 */
+export const sendJson = async (request: JsonSendRequest): Promise<void> => {
 	const {
 		url,
+		method,
 		headers = {},
 		payload,
 		timeoutMs,
@@ -49,7 +52,7 @@ export const postJson = async (request: JsonPostRequest): Promise<void> => {
 	let response: Response;
 	try {
 		response = await fetch(url, {
-			method: "POST",
+			method,
 			headers: {
 				"Content-Type": "application/json",
 				...headers,
@@ -73,7 +76,7 @@ export const postJson = async (request: JsonPostRequest): Promise<void> => {
 	}
 
 	if (!response.ok) {
-		const responseDetails: JsonPostResponseDetails = {
+		const responseDetails: JsonResponseDetails = {
 			status: response.status,
 			body: sanitizeText(await response.text(), {
 				replacements: responseBodyReplacements,

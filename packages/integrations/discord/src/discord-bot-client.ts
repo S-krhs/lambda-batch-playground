@@ -4,13 +4,10 @@ import {
 	sanitizeText,
 	type TextReplacement,
 } from "@eskra-aws-playground/libs/string/text-sanitizer.js";
-import {
-	type JsonPostResponseDetails,
-	postJson,
-} from "./internal/post-json.js";
+import { type JsonResponseDetails, sendJson } from "./internal/send-json.js";
 
 /** Discord Bot API 失敗応答の安全化済み詳細。 */
-export type DiscordBotResponseDetails = JsonPostResponseDetails;
+export type DiscordBotResponseDetails = JsonResponseDetails;
 
 const DISCORD_API_BASE_URL = "https://discord.com/api/v10";
 const DISCORD_CHANNEL_ID_PATTERN = /^\d+$/;
@@ -78,7 +75,8 @@ export class DiscordBotClient {
 		}
 
 		try {
-			await postJson({
+			await sendJson({
+				method: "POST",
 				url: `${DISCORD_API_BASE_URL}/channels/${normalizedChannelId}/messages`,
 				headers: {
 					Authorization: `Bot ${this.botToken}`,

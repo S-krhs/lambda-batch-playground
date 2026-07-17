@@ -20,10 +20,8 @@ import type {
 	FunctionUrlEvent,
 	FunctionUrlResponse,
 } from "@/handlers/function-url/schema.js";
-import {
-	HELLO_COMMAND_NAME,
-	resolveHelloCommand,
-} from "./operations/resolve-hello-command.js";
+import { HELLO_COMMAND_NAME } from "./command-definitions.js";
+import { resolveHelloCommand } from "./operations/resolve-hello-command.js";
 import { resolveReminderChoice } from "./operations/resolve-reminder-choice.js";
 import { discordInteractionRequestSchema } from "./schema.js";
 
