@@ -156,7 +156,11 @@ describe.skipIf(!testDatabaseUrl)(
 				key,
 				configurationSchema,
 			});
-			expect(settings.map((setting) => setting.userId)).toEqual([anotherUserId]);
+			expect(
+				settings.map((setting) => {
+					return setting.userId;
+				}),
+			).toEqual([anotherUserId]);
 		});
 
 		it("Guild・対象利用者の設定を削除し、削除対象の有無を返す", async () => {
