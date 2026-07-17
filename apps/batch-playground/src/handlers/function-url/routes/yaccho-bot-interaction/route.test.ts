@@ -27,6 +27,14 @@ vi.mock("sst/resource", () => {
 	};
 });
 
+const reminderConfigStore = vi.hoisted(() => {
+	return { save: vi.fn(), deleteByGuildIdAndUserId: vi.fn() };
+});
+
+vi.mock("@/features/play-check-reminder/reminder-config-store.js", () => {
+	return { reminderConfigStore };
+});
+
 const timestamp = "1720000000";
 const signature = "test-signature";
 const targetUserId = "111111111111111111";
@@ -80,6 +88,8 @@ const okBody = (
 beforeEach(() => {
 	verifier.verifyInteractionSignature.mockReset();
 	verifier.verifyInteractionSignature.mockReturnValue(true);
+	reminderConfigStore.save.mockReset();
+	reminderConfigStore.deleteByGuildIdAndUserId.mockReset();
 });
 
 describe("yacchoBotInteractionRoute", () => {
@@ -187,6 +197,46 @@ describe("yacchoBotInteractionRoute", () => {
 		expect(body.type).toBe(4);
 		expect(body.data?.content).toBe("やおよろ～🌚");
 		expect(body.data?.flags).toBeUndefined();
+	});
+
+	it("gamble-check-enable はサーバー内チャンネルで本人設定を登録する", async () => {
+		const rawBody = JSON.stringify({
+			type: 2,
+			data: { name: "gamble-check-enable" },
+			guild_id: "555555555555555555",
+			channel_id: "666666666666666666",
+			member: { user: { id: targetUserId } },
+		});
+
+		const body = okBody(await yacchoBotInteractionRoute(buildEvent(rawBody)));
+
+		expect(reminderConfigStore.save).toHaveBeenCalledWith({
+			guildId: "555555555555555555",
+			channelId: "666666666666666666",
+			userId: targetUserId,
+		});
+		expect(body.type).toBe(4);
+		expect(body.data?.flags).toBe(64);
+		expect(body.data?.content).toContain("有効");
+	});
+
+	it("gamble-check-disable は本人設定だけを削除する", async () => {
+		reminderConfigStore.deleteByGuildIdAndUserId.mockResolvedValue(true);
+		const rawBody = JSON.stringify({
+			type: 2,
+			data: { name: "gamble-check-disable" },
+			guild_id: "555555555555555555",
+			member: { user: { id: targetUserId } },
+		});
+
+		const body = okBody(await yacchoBotInteractionRoute(buildEvent(rawBody)));
+
+		expect(reminderConfigStore.deleteByGuildIdAndUserId).toHaveBeenCalledWith(
+			"555555555555555555",
+			targetUserId,
+		);
+		expect(body.type).toBe(4);
+		expect(body.data?.content).toContain("無効");
 	});
 
 	it("未対応のコマンドは対応外の ephemeral メッセージを返す", async () => {
