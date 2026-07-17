@@ -18,7 +18,7 @@ export const playCheckReminderJob = async (
 	_event: unknown,
 ): Promise<BatchResponse> => {
 	// 1. SST link から Bot token・投稿先チャンネル ID・対象ユーザー ID を解決する。
-	const discordBotToken = Resource.DiscordBotToken.value;
+	const discordBotToken = Resource.YacchoDiscordBotToken.value;
 	const discordChannelId = Resource.PlayCheckReminderDiscordChannelId.value;
 	const targetUserId = Resource.PlayCheckReminderTargetUserId.value;
 

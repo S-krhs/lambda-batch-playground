@@ -21,7 +21,9 @@ vi.mock(
 
 vi.mock("sst/resource", () => {
 	return {
-		Resource: { DiscordInteractionPublicKey: { value: "test-public-key" } },
+		Resource: {
+			YacchoDiscordInteractionPublicKey: { value: "test-public-key" },
+		},
 	};
 });
 

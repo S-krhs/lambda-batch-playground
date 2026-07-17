@@ -65,8 +65,17 @@ export default $config({
 			},
 		);
 
-		// 遊技チェックリマインダー投稿用の Discord Bot token を Secret として扱う
-		const discordBotToken = new sst.Secret("DiscordBotToken");
+		// Discord application ごとの認証情報を Secret として分離する
+		const yacchoDiscordBotToken = new sst.Secret("YacchoDiscordBotToken");
+		const yacchoDiscordInteractionPublicKey = new sst.Secret(
+			"YacchoDiscordInteractionPublicKey",
+		);
+		new sst.Secret("YacchoDiscordApplicationId");
+		new sst.Secret("KaguyaDiscordBotToken");
+		const kaguyaDiscordInteractionPublicKey = new sst.Secret(
+			"KaguyaDiscordInteractionPublicKey",
+		);
+		new sst.Secret("KaguyaDiscordApplicationId");
 
 		// 遊技チェックリマインダーの投稿先チャンネルと回答対象ユーザーを Secret として扱う
 		const playCheckReminderChannelId = new sst.Secret(
@@ -84,7 +93,7 @@ export default $config({
 			memory: "128 MB",
 			link: [
 				umaOneDrawTopicWebhookUrl,
-				discordBotToken,
+				yacchoDiscordBotToken,
 				playCheckReminderChannelId,
 				playCheckReminderTargetUserId,
 			],
@@ -143,24 +152,17 @@ export default $config({
 			...jobSchedules.playCheckReminder,
 		});
 
-		// リマインダーのボタン押下を検証するための Discord application public key を Secret として扱う
-		const discordInteractionPublicKey = new sst.Secret(
-			"DiscordInteractionPublicKey",
-		);
-
-		// スラッシュコマンド同期スクリプト(sst shell 経由)が参照する Discord application ID と guild ID を Secret として扱う
-		const discordApplicationId = new sst.Secret("DiscordApplicationId");
-		const discordGuildId = new sst.Secret("DiscordGuildId");
-
 		// 公開エンドポイントは job ごとに増やさずこの Lambda 1 つに集約する。
-		// application ID・guild ID は Lambda では未使用だが、コマンド同期スクリプトが sst shell で参照するため link する
 		const functionUrlFunction = new sst.aws.Function("FunctionUrlFunction", {
 			handler:
 				"../apps/batch-playground/src/handlers/function-url/handler.handler",
 			runtime: "nodejs22.x",
 			timeout: "10 seconds",
 			memory: "128 MB",
-			link: [discordInteractionPublicKey, discordApplicationId, discordGuildId],
+			link: [
+				yacchoDiscordInteractionPublicKey,
+				kaguyaDiscordInteractionPublicKey,
+			],
 			url: true,
 		});
 

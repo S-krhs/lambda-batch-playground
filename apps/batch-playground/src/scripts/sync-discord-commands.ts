@@ -1,4 +1,4 @@
-// In scope: 宣言済みのスラッシュコマンドを Discord API の登録形式へ変換し、guild へ bulk overwrite で同期する
+// In scope: Bot ごとのスラッシュコマンドを Discord API の登録形式へ変換し、global scope へ bulk overwrite する
 // Out of scope: コマンドの宣言、応答内容、interaction の解釈
 import {
 	DiscordCommandClient,
@@ -6,39 +6,65 @@ import {
 } from "@eskra-aws-playground/integration-discord/discord-command-client.js";
 import { Resource } from "sst/resource";
 
-import { commands } from "../handlers/function-url/routes/yaccho-bot-interaction/shared/commands.js";
+import { commands as kaguyaCommands } from "../handlers/function-url/routes/kaguya-bot-interaction/shared/commands.js";
+import { commands as yacchoCommands } from "../handlers/function-url/routes/yaccho-bot-interaction/shared/commands.js";
 
-/** アプリのコマンド定義を Discord API の登録形式へ変換する。 */
-const definitions: readonly DiscordCommandDefinition[] =
-	Object.values(commands);
+interface DiscordCommandSyncTarget {
+	botName: string;
+	client: DiscordCommandClient;
+	applicationId: string;
+	definitions: readonly DiscordCommandDefinition[];
+}
 
 /**
- * 宣言済みコマンド定義を Discord guild へ bulk overwrite で同期する。
+ * Botごとのコマンド定義を global scope へ bulk overwrite で同期する。
  * --dry-run では送信せず、現登録と登録予定を並べて表示するだけ。
  * SST secret を Resource で参照するため `sst shell` 経由で起動する(root の `npm run discord:sync` / `discord:sync:dry`)。
  */
 const syncDiscordCommands = async (): Promise<void> => {
-	const client = new DiscordCommandClient(Resource.DiscordBotToken.value);
-	const applicationId = Resource.DiscordApplicationId.value;
-	const guildId = Resource.DiscordGuildId.value;
+	const targets: readonly DiscordCommandSyncTarget[] = [
+		{
+			botName: "yaccho-bot",
+			client: new DiscordCommandClient(Resource.YacchoDiscordBotToken.value),
+			applicationId: Resource.YacchoDiscordApplicationId.value,
+			definitions: Object.values(yacchoCommands),
+		},
+		{
+			botName: "kaguya-bot",
+			client: new DiscordCommandClient(Resource.KaguyaDiscordBotToken.value),
+			applicationId: Resource.KaguyaDiscordApplicationId.value,
+			definitions: Object.values(kaguyaCommands),
+		},
+	];
 
 	if (process.argv.includes("--dry-run")) {
-		const current = await client.getGuildCommands(applicationId, guildId);
-		console.log("Discord に現在登録されているコマンド:");
-		console.log(JSON.stringify(current, null, 2));
-		console.log("登録予定(コード):");
-		console.log(JSON.stringify(definitions, null, 2));
+		for (const target of targets) {
+			const current = await target.client.getGlobalCommands(
+				target.applicationId,
+			);
+			console.log(`${target.botName} に現在登録されている global command:`);
+			console.log(JSON.stringify(current, null, 2));
+			console.log(`${target.botName} の登録予定(コード):`);
+			console.log(JSON.stringify(target.definitions, null, 2));
+		}
 		return;
 	}
 
-	await client.overwriteGuildCommands(applicationId, guildId, definitions);
+	for (const target of targets) {
+		await target.client.overwriteGlobalCommands(
+			target.applicationId,
+			target.definitions,
+		);
 
-	const registered = definitions
-		.map((command) => {
-			return `/${command.name}`;
-		})
-		.join(", ");
-	console.log(`Discord guild コマンドを同期しました: ${registered}`);
+		const registered = target.definitions
+			.map((command) => {
+				return `/${command.name}`;
+			})
+			.join(", ");
+		console.log(
+			`${target.botName} の global command を同期しました: ${registered}`,
+		);
+	}
 };
 
 syncDiscordCommands().catch((error: unknown) => {

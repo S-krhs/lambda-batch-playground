@@ -5,11 +5,13 @@ import "sst/resource";
 declare module "sst/resource" {
 	interface Resource {
 		UmaOneDrawTopicDiscordWebhook: { value: string };
-		DiscordBotToken: { value: string };
+		YacchoDiscordBotToken: { value: string };
 		PlayCheckReminderDiscordChannelId: { value: string };
 		PlayCheckReminderTargetUserId: { value: string };
-		DiscordInteractionPublicKey: { value: string };
-		DiscordApplicationId: { value: string };
-		DiscordGuildId: { value: string };
+		YacchoDiscordInteractionPublicKey: { value: string };
+		YacchoDiscordApplicationId: { value: string };
+		KaguyaDiscordBotToken: { value: string };
+		KaguyaDiscordInteractionPublicKey: { value: string };
+		KaguyaDiscordApplicationId: { value: string };
 	}
 }

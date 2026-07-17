@@ -11,10 +11,10 @@ import { findInteractionOperation } from "./operation-routing.js";
 import { ephemeralOperation } from "./operations/ephemeral-operation.js";
 import { discordInteractionRequestSchema } from "./schema.js";
 
-const logger = createBatchLogger("yaccho-bot-interaction");
+const logger = createBatchLogger("kaguya-bot-interaction");
 
-/** Yaccho Bot の Discord interactions endpoint route。 */
-export const yacchoBotInteractionRoute = async (
+/** Kaguya Bot の Discord interactions endpoint route。 */
+export const kaguyaBotInteractionRoute = async (
 	event: FunctionUrlEvent,
 ): Promise<FunctionUrlResponse> => {
 	// 1. request を route 固有の入力へ parse する。
@@ -32,7 +32,7 @@ export const yacchoBotInteractionRoute = async (
 	const { signature, timestamp, rawBody, interaction } = parsedRequest.data;
 
 	// 2. parse 済み request を認証・認可する。
-	const publicKey = Resource.YacchoDiscordInteractionPublicKey.value;
+	const publicKey = Resource.KaguyaDiscordInteractionPublicKey.value;
 	if (
 		!verifyInteractionSignature({ publicKey, signature, timestamp, rawBody })
 	) {
