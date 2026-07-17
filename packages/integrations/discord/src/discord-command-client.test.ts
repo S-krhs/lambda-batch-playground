@@ -42,6 +42,12 @@ describe("DiscordCommandClient", () => {
 		await expect(
 			client.getGuildCommands("not-a-snowflake", GUILD_ID),
 		).rejects.toThrow(DiscordCommandError);
+		await expect(
+			client.overwriteGlobalCommands("not-a-snowflake", commands),
+		).rejects.toThrow(DiscordCommandError);
+		await expect(client.getGlobalCommands("1".repeat(21))).rejects.toThrow(
+			DiscordCommandError,
+		);
 	});
 
 	it("guild コマンド API へ正しい URL・メソッド・ヘッダー・payload で PUT する", async () => {
@@ -61,6 +67,32 @@ describe("DiscordCommandClient", () => {
 
 		expect(url).toBe(
 			`https://discord.com/api/v10/applications/${APPLICATION_ID}/guilds/${GUILD_ID}/commands`,
+		);
+		expect(init.method).toBe("PUT");
+		expect(init.headers).toEqual({
+			Authorization: `Bot ${BOT_TOKEN}`,
+			"Content-Type": "application/json",
+		});
+		expect(JSON.parse(init.body as string)).toEqual(commands);
+	});
+
+	it("global コマンド API へ正しい URL・メソッド・ヘッダー・payload で PUT する", async () => {
+		const fetchMock = vi.fn(async () => {
+			return new Response(null, { status: 200 });
+		});
+		vi.stubGlobal("fetch", fetchMock);
+
+		const client = new DiscordCommandClient(BOT_TOKEN);
+		await client.overwriteGlobalCommands(APPLICATION_ID, commands);
+
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		const [url, init] = fetchMock.mock.calls[0] as unknown as [
+			string,
+			RequestInit,
+		];
+
+		expect(url).toBe(
+			`https://discord.com/api/v10/applications/${APPLICATION_ID}/commands`,
 		);
 		expect(init.method).toBe("PUT");
 		expect(init.headers).toEqual({
@@ -90,6 +122,31 @@ describe("DiscordCommandClient", () => {
 
 		expect(url).toBe(
 			`https://discord.com/api/v10/applications/${APPLICATION_ID}/guilds/${GUILD_ID}/commands`,
+		);
+		expect(init.method).toBe("GET");
+		expect(init.headers).toEqual({ Authorization: `Bot ${BOT_TOKEN}` });
+	});
+
+	it("global コマンド API へ正しい URL・メソッド・ヘッダーで GET し、登録済みコマンドを返す", async () => {
+		const registered = [
+			{ id: "999", name: "hello", description: "やおよろ～と挨拶を返す" },
+		];
+		const fetchMock = vi.fn(async () => {
+			return new Response(JSON.stringify(registered), { status: 200 });
+		});
+		vi.stubGlobal("fetch", fetchMock);
+
+		const client = new DiscordCommandClient(BOT_TOKEN);
+		const result = await client.getGlobalCommands(APPLICATION_ID);
+
+		expect(result).toEqual(registered);
+		const [url, init] = fetchMock.mock.calls[0] as unknown as [
+			string,
+			RequestInit,
+		];
+
+		expect(url).toBe(
+			`https://discord.com/api/v10/applications/${APPLICATION_ID}/commands`,
 		);
 		expect(init.method).toBe("GET");
 		expect(init.headers).toEqual({ Authorization: `Bot ${BOT_TOKEN}` });
