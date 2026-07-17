@@ -12,41 +12,51 @@ const RESPONSE_TYPE_UPDATE_MESSAGE = 7;
 const RESPONSE_TYPE_AUTOCOMPLETE_RESULT = 8;
 const MESSAGE_FLAG_EPHEMERAL = 64;
 
-/** Discord interaction callback の生成指示。 */
-export type DiscordInteractionResponse =
-	| { kind: "pong" }
-	| { kind: "update-message"; content: string }
-	| { kind: "channel-message"; content: string }
-	| { kind: "ephemeral"; content: string }
-	| { kind: "empty-autocomplete" };
+/** Discord PONG interaction callback の payload。 */
+export type DiscordPongResponsePayload = { type: 1 };
+
+/** Discord channel message interaction callback の payload。 */
+export type DiscordChannelMessageResponsePayload = {
+	type: 4;
+	data: {
+		content: string;
+		allowed_mentions: { parse: readonly string[] };
+	};
+};
+
+/** Discord ephemeral interaction callback の payload。 */
+export type DiscordEphemeralResponsePayload = {
+	type: 4;
+	data: {
+		content: string;
+		flags: 64;
+		allowed_mentions: { parse: readonly string[] };
+	};
+};
+
+/** Discord message update interaction callback の payload。 */
+export type DiscordUpdateMessageResponsePayload = {
+	type: 7;
+	data: {
+		content: string;
+		components: readonly [];
+		allowed_mentions: { parse: readonly string[] };
+	};
+};
+
+/** 空の Discord autocomplete interaction callback の payload。 */
+export type DiscordEmptyAutocompleteResponsePayload = {
+	type: 8;
+	data: { choices: readonly [] };
+};
 
 /** Discord interaction callback の payload。 */
 export type DiscordInteractionResponsePayload =
-	| { type: 1 }
-	| {
-			type: 4;
-			data: {
-				content: string;
-				allowed_mentions: { parse: readonly string[] };
-			};
-	  }
-	| {
-			type: 4;
-			data: {
-				content: string;
-				flags: 64;
-				allowed_mentions: { parse: readonly string[] };
-			};
-	  }
-	| {
-			type: 7;
-			data: {
-				content: string;
-				components: readonly [];
-				allowed_mentions: { parse: readonly string[] };
-			};
-	  }
-	| { type: 8; data: { choices: readonly [] } };
+	| DiscordPongResponsePayload
+	| DiscordChannelMessageResponsePayload
+	| DiscordEphemeralResponsePayload
+	| DiscordUpdateMessageResponsePayload
+	| DiscordEmptyAutocompleteResponsePayload;
 
 /** 対象ユーザーをメンションしたテキストメッセージ payload を構築する。 */
 export const buildMentionMessage = (targetUserId: string, text: string) => {
@@ -83,43 +93,57 @@ export const buildChoiceButtonsMessage = (
 	};
 };
 
-/** Discord interaction callback の生成指示から payload を構築する。 */
-export const buildInteractionResponse = (
-	response: DiscordInteractionResponse,
-): DiscordInteractionResponsePayload => {
-	switch (response.kind) {
-		case "pong":
-			return { type: RESPONSE_TYPE_PONG };
-		case "update-message":
-			return {
-				type: RESPONSE_TYPE_UPDATE_MESSAGE,
-				data: {
-					content: response.content,
-					components: [],
-					allowed_mentions: { parse: [] },
-				},
-			};
-		case "channel-message":
-			return {
-				type: RESPONSE_TYPE_CHANNEL_MESSAGE,
-				data: {
-					content: response.content,
-					allowed_mentions: { parse: [] },
-				},
-			};
-		case "ephemeral":
-			return {
-				type: RESPONSE_TYPE_CHANNEL_MESSAGE,
-				data: {
-					content: response.content,
-					flags: MESSAGE_FLAG_EPHEMERAL,
-					allowed_mentions: { parse: [] },
-				},
-			};
-		case "empty-autocomplete":
-			return {
-				type: RESPONSE_TYPE_AUTOCOMPLETE_RESULT,
-				data: { choices: [] },
-			};
-	}
+/** Discord PONG interaction callback を構築する。 */
+export const buildPongResponse = (): DiscordPongResponsePayload => {
+	return { type: RESPONSE_TYPE_PONG };
 };
+
+/** 元の Discord message を更新する interaction callback を構築する。 */
+export const buildUpdateMessageResponse = (
+	content: string,
+): DiscordUpdateMessageResponsePayload => {
+	return {
+		type: RESPONSE_TYPE_UPDATE_MESSAGE,
+		data: {
+			content,
+			components: [],
+			allowed_mentions: { parse: [] },
+		},
+	};
+};
+
+/** Discord channel message interaction callback を構築する。 */
+export const buildChannelMessageResponse = (
+	content: string,
+): DiscordChannelMessageResponsePayload => {
+	return {
+		type: RESPONSE_TYPE_CHANNEL_MESSAGE,
+		data: {
+			content,
+			allowed_mentions: { parse: [] },
+		},
+	};
+};
+
+/** Discord ephemeral interaction callback を構築する。 */
+export const buildEphemeralResponse = (
+	content: string,
+): DiscordEphemeralResponsePayload => {
+	return {
+		type: RESPONSE_TYPE_CHANNEL_MESSAGE,
+		data: {
+			content,
+			flags: MESSAGE_FLAG_EPHEMERAL,
+			allowed_mentions: { parse: [] },
+		},
+	};
+};
+
+/** 空の Discord autocomplete interaction callback を構築する。 */
+export const buildEmptyAutocompleteResponse =
+	(): DiscordEmptyAutocompleteResponsePayload => {
+		return {
+			type: RESPONSE_TYPE_AUTOCOMPLETE_RESULT,
+			data: { choices: [] },
+		};
+	};

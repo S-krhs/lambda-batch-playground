@@ -3,7 +3,9 @@
 import { createBatchLogger } from "@eskra-aws-playground/libs/logger/batch-logger.js";
 import { Resource } from "sst/resource";
 import {
-	buildInteractionResponse,
+	buildEmptyAutocompleteResponse,
+	buildEphemeralResponse,
+	buildPongResponse,
 	type DiscordInteractionResponsePayload,
 } from "@/external-protocols/discord-message/build.js";
 import {
@@ -35,10 +37,7 @@ type DiscordInteractionResult = OperationResult<
 
 const unsupported: Unsupported<DiscordInteractionResponsePayload> = {
 	kind: "UNSUPPORTED",
-	data: buildInteractionResponse({
-		kind: "ephemeral",
-		content: "この操作には対応していません。",
-	}),
+	data: buildEphemeralResponse("この操作には対応していません。"),
 };
 
 /** Discord interactions endpoint の route。 */
@@ -90,11 +89,11 @@ const routeInteraction = (
 ): DiscordInteractionResult => {
 	switch (interaction.type) {
 		case DISCORD_INTERACTION_TYPES.PING:
-			return { kind: "OK", data: buildInteractionResponse({ kind: "pong" }) };
+			return { kind: "OK", data: buildPongResponse() };
 		case DISCORD_INTERACTION_TYPES.APPLICATION_COMMAND_AUTOCOMPLETE:
 			return {
 				kind: "OK",
-				data: buildInteractionResponse({ kind: "empty-autocomplete" }),
+				data: buildEmptyAutocompleteResponse(),
 			};
 		case DISCORD_INTERACTION_TYPES.APPLICATION_COMMAND:
 			switch (interaction.commandName) {

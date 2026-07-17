@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+	buildChannelMessageResponse,
 	buildChoiceButtonsMessage,
-	buildInteractionResponse,
+	buildEmptyAutocompleteResponse,
+	buildEphemeralResponse,
 	buildMentionMessage,
+	buildPongResponse,
+	buildUpdateMessageResponse,
 } from "./build.js";
 
 describe("buildMentionMessage", () => {
@@ -71,18 +75,13 @@ describe("buildChoiceButtonsMessage", () => {
 	});
 });
 
-describe("buildInteractionResponse", () => {
+describe("Discord interaction response builders", () => {
 	it("PONG response を構築する", () => {
-		expect(buildInteractionResponse({ kind: "pong" })).toEqual({ type: 1 });
+		expect(buildPongResponse()).toEqual({ type: 1 });
 	});
 
 	it("元メッセージ更新 response を構築する", () => {
-		expect(
-			buildInteractionResponse({
-				kind: "update-message",
-				content: "更新しました",
-			}),
-		).toEqual({
+		expect(buildUpdateMessageResponse("更新しました")).toEqual({
 			type: 7,
 			data: {
 				content: "更新しました",
@@ -93,12 +92,7 @@ describe("buildInteractionResponse", () => {
 	});
 
 	it("channel message response を構築する", () => {
-		expect(
-			buildInteractionResponse({
-				kind: "channel-message",
-				content: "やおよろ～🌚",
-			}),
-		).toEqual({
+		expect(buildChannelMessageResponse("やおよろ～🌚")).toEqual({
 			type: 4,
 			data: {
 				content: "やおよろ～🌚",
@@ -108,12 +102,7 @@ describe("buildInteractionResponse", () => {
 	});
 
 	it("ephemeral response を構築する", () => {
-		expect(
-			buildInteractionResponse({
-				kind: "ephemeral",
-				content: "対象外です",
-			}),
-		).toEqual({
+		expect(buildEphemeralResponse("対象外です")).toEqual({
 			type: 4,
 			data: {
 				content: "対象外です",
@@ -124,7 +113,7 @@ describe("buildInteractionResponse", () => {
 	});
 
 	it("空の autocomplete response を構築する", () => {
-		expect(buildInteractionResponse({ kind: "empty-autocomplete" })).toEqual({
+		expect(buildEmptyAutocompleteResponse()).toEqual({
 			type: 8,
 			data: { choices: [] },
 		});

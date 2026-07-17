@@ -1,7 +1,8 @@
 // In scope: 遊技リマインダーのボタン押下から返す interaction callback payload を解決する
 // Out of scope: interaction 種別・コマンドのルーティング、payload の構造定義、HTTP response の形成
 import {
-	buildInteractionResponse,
+	buildEphemeralResponse,
+	buildUpdateMessageResponse,
 	type DiscordInteractionResponsePayload,
 } from "@/external-protocols/discord-message/build.js";
 import {
@@ -40,18 +41,16 @@ export const resolveReminderChoice = (
 	if (selection.pressedUserId !== selection.targetUserId) {
 		return {
 			kind: "FORBIDDEN",
-			data: buildInteractionResponse({
-				kind: "ephemeral",
-				content: `このリマインダーは <@${selection.targetUserId}> さんしか使えないのです～、よよよ……`,
-			}),
+			data: buildEphemeralResponse(
+				`このリマインダーは <@${selection.targetUserId}> さんしか使えないのです～、よよよ……`,
+			),
 		};
 	}
 
 	return {
 		kind: "OK",
-		data: buildInteractionResponse({
-			kind: "update-message",
-			content: `でれれれれれ～、**${selection.choiceLabel}**！`,
-		}),
+		data: buildUpdateMessageResponse(
+			`でれれれれれ～、**${selection.choiceLabel}**！`,
+		),
 	};
 };
