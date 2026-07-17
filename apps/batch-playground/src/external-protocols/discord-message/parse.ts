@@ -1,8 +1,6 @@
-// In scope: interaction body の parse と custom_id からのボタン選択情報の解釈
-// Out of scope: メッセージ payload の build、署名検証、業務ルール、HTTP 通信
+// In scope: Discord interaction body の JSON 構文解析と構造検証
+// Out of scope: custom_id の機能固有な解釈、署名検証、業務ルール、HTTP 通信
 import { z } from "zod";
-
-import { CUSTOM_ID_SEPARATOR, type DiscordChoiceDefinition } from "./choice.js";
 
 /** Discord interaction type。 */
 export const DISCORD_INTERACTION_TYPES = {
@@ -20,14 +18,6 @@ export interface DiscordInteraction {
 	pressedUserId?: string;
 }
 
-/** Discord interaction のボタン選択情報。 */
-export interface DiscordChoiceSelection {
-	choiceId: string;
-	choiceLabel: string;
-	pressedUserId: string;
-	targetUserId: string;
-}
-
 const interactionBodySchema = z.object({
 	type: z.number(),
 	data: z
@@ -43,6 +33,7 @@ const interactionBodySchema = z.object({
 export const parseInteraction = (
 	rawBody: string,
 ): DiscordInteraction | undefined => {
+	// JSON 文字列の構文解析は JSON.parse、parse 後の構造検証は Zod が担当する。
 	let json: unknown;
 	try {
 		json = JSON.parse(rawBody) as unknown;
@@ -60,39 +51,5 @@ export const parseInteraction = (
 		commandName: parsed.data.data?.name,
 		customId: parsed.data.data?.custom_id,
 		pressedUserId: parsed.data.member?.user?.id ?? parsed.data.user?.id,
-	};
-};
-
-/** Parse 済み interaction と送信時の定義からボタン選択情報を解決する。 */
-export const resolveChoice = (
-	interaction: DiscordInteraction,
-	definition: DiscordChoiceDefinition,
-): DiscordChoiceSelection | undefined => {
-	if (!interaction.customId || !interaction.pressedUserId) {
-		return undefined;
-	}
-
-	const parts = interaction.customId.split(CUSTOM_ID_SEPARATOR);
-	if (parts.length !== 3) {
-		return undefined;
-	}
-
-	const [customIdPrefix, targetUserId, choiceId] = parts;
-	if (customIdPrefix !== definition.customIdPrefix || !targetUserId) {
-		return undefined;
-	}
-
-	const choice = definition.choices.find((candidate) => {
-		return candidate.id === choiceId;
-	});
-	if (!choice) {
-		return undefined;
-	}
-
-	return {
-		choiceId: choice.id,
-		choiceLabel: choice.label,
-		pressedUserId: interaction.pressedUserId,
-		targetUserId,
 	};
 };

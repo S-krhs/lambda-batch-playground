@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveHelloCommand } from "./resolve-hello-command.js";
+import { helloCommandOperation } from "./hello-command-operation.js";
 
-describe("resolveHelloCommand", () => {
+describe("helloCommandOperation", () => {
 	it("OK と挨拶メッセージ payload を返す", () => {
-		expect(resolveHelloCommand()).toEqual({
+		expect(helloCommandOperation()).toEqual({
 			kind: "OK",
 			data: {
 				type: 4,

@@ -5,14 +5,10 @@ import { createBatchLogger } from "@eskra-aws-playground/libs/logger/batch-logge
 import { Resource } from "sst/resource";
 
 import {
-	buildChoiceButtonsMessage,
-	buildMentionMessage,
-} from "@/external-protocols/discord-message/build.js";
-import {
-	REMINDER_CHOICES,
-	REMINDER_CUSTOM_ID_PREFIX,
-	REMINDER_QUESTION,
-} from "@/features/play-check-reminder/reminder-settings.js";
+	buildReminderChoicesMessage,
+	buildReminderQuestionMessage,
+} from "@/features/play-check-reminder/reminder-message.js";
+import { REMINDER_CHOICES } from "@/features/play-check-reminder/reminder-settings.js";
 import type { BatchResponse } from "@/handlers/batch/schema.js";
 
 const logger = createBatchLogger("play-check-reminder");
@@ -33,14 +29,11 @@ export const playCheckReminderJob = async (
 		const botClient = new DiscordBotClient(discordBotToken);
 		await botClient.postChannelMessage(
 			discordChannelId,
-			buildMentionMessage(targetUserId, REMINDER_QUESTION),
+			buildReminderQuestionMessage(targetUserId),
 		);
 		await botClient.postChannelMessage(
 			discordChannelId,
-			buildChoiceButtonsMessage(targetUserId, {
-				customIdPrefix: REMINDER_CUSTOM_ID_PREFIX,
-				choices: REMINDER_CHOICES,
-			}),
+			buildReminderChoicesMessage(targetUserId),
 		);
 	} catch (notificationError) {
 		logger.failure(notificationError);

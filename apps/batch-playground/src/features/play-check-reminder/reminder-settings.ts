@@ -4,7 +4,7 @@
 /** 遊技チェックリマインダーの質問文。 */
 export const REMINDER_QUESTION = "やおよろ～！今日は遊技した？";
 
-/** 選択肢メッセージの custom_id prefix。残りの形式は Discord protocol が構築する。 */
+/** 選択肢メッセージの custom_id prefix。残りの形式はリマインダー機能内で構築する。 */
 export const REMINDER_CUSTOM_ID_PREFIX = "play-check-reminder";
 
 /** 選択肢ボタンを利用者へどう見せるかを表す意味的なtone。 */

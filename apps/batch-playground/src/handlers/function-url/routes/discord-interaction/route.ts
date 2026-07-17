@@ -2,43 +2,21 @@
 // Out of scope: 署名検証アルゴリズム、機能ごとの応答内容の解決、選択メッセージの文面生成
 import { createBatchLogger } from "@eskra-aws-playground/libs/logger/batch-logger.js";
 import { Resource } from "sst/resource";
-import {
-	buildEmptyAutocompleteResponse,
-	buildEphemeralResponse,
-	buildPongResponse,
-	type DiscordInteractionResponsePayload,
-} from "@/external-protocols/discord-message/build.js";
-import {
-	DISCORD_INTERACTION_TYPES,
-	type DiscordInteraction,
-} from "@/external-protocols/discord-message/parse.js";
+import { DISCORD_INTERACTION_TYPES } from "@/external-protocols/discord-message/parse.js";
 import { verifyInteractionSignature } from "@/external-protocols/discord-signature/verify-interaction-signature.js";
-import type {
-	Forbidden,
-	OperationResult,
-	Unsupported,
-} from "@/handlers/function-url/routes/intermediate-models/operation-result.js";
 import type {
 	FunctionUrlEvent,
 	FunctionUrlResponse,
 } from "@/handlers/function-url/schema.js";
 import { COMMAND_DEFINITIONS } from "./command-definitions.js";
-import { resolveHelloCommand } from "./operations/resolve-hello-command.js";
-import { resolveReminderChoice } from "./operations/resolve-reminder-choice.js";
+import { autocompleteOperation } from "./operations/autocomplete-operation.js";
+import { ephemeralOperation } from "./operations/ephemeral-operation.js";
+import { helloCommandOperation } from "./operations/hello-command-operation.js";
+import { pingOperation } from "./operations/ping-operation.js";
+import { playCheckReminderOperation } from "./operations/play-check-reminder-operation.js";
 import { discordInteractionRequestSchema } from "./schema.js";
 
 const logger = createBatchLogger("discord-interaction");
-
-type DiscordInteractionResult = OperationResult<
-	DiscordInteractionResponsePayload,
-	| Unsupported<DiscordInteractionResponsePayload>
-	| Forbidden<DiscordInteractionResponsePayload>
->;
-
-const unsupported: Unsupported<DiscordInteractionResponsePayload> = {
-	kind: "UNSUPPORTED",
-	data: buildEphemeralResponse("この操作には対応していません。"),
-};
 
 /** Discord interactions endpoint の route。 */
 export const discordInteractionRoute = async (
@@ -72,7 +50,28 @@ export const discordInteractionRoute = async (
 	}
 
 	// 3. interaction 種別・コマンド名から担当 operation へルーティングして解決する。
-	const result = routeInteraction(interaction);
+	const result = (() => {
+		switch (interaction.type) {
+			case DISCORD_INTERACTION_TYPES.PING:
+				return pingOperation();
+			case DISCORD_INTERACTION_TYPES.APPLICATION_COMMAND_AUTOCOMPLETE:
+				return autocompleteOperation();
+			case DISCORD_INTERACTION_TYPES.APPLICATION_COMMAND:
+				switch (interaction.commandName) {
+					case COMMAND_DEFINITIONS.hello.commandName:
+						return helloCommandOperation();
+					default:
+						return ephemeralOperation("この操作には対応していません。");
+				}
+			case DISCORD_INTERACTION_TYPES.MESSAGE_COMPONENT:
+				return (
+					playCheckReminderOperation(interaction) ??
+					ephemeralOperation("この操作には対応していません。")
+				);
+			default:
+				return ephemeralOperation("この操作には対応していません。");
+		}
+	})();
 	logger.complete({ interactionType: interaction.type, outcome: result.kind });
 
 	// 4. 解決済み payload から 200 response を形成する。
@@ -81,30 +80,4 @@ export const discordInteractionRoute = async (
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(result.data),
 	};
-};
-
-/** interaction 種別・コマンド名から担当 operation を呼び分ける。コマンドを追加したらここへ登録する。 */
-const routeInteraction = (
-	interaction: DiscordInteraction,
-): DiscordInteractionResult => {
-	switch (interaction.type) {
-		case DISCORD_INTERACTION_TYPES.PING:
-			return { kind: "OK", data: buildPongResponse() };
-		case DISCORD_INTERACTION_TYPES.APPLICATION_COMMAND_AUTOCOMPLETE:
-			return {
-				kind: "OK",
-				data: buildEmptyAutocompleteResponse(),
-			};
-		case DISCORD_INTERACTION_TYPES.APPLICATION_COMMAND:
-			switch (interaction.commandName) {
-				case COMMAND_DEFINITIONS.hello.commandName:
-					return resolveHelloCommand();
-				default:
-					return unsupported;
-			}
-		case DISCORD_INTERACTION_TYPES.MESSAGE_COMPONENT:
-			return resolveReminderChoice(interaction) ?? unsupported;
-		default:
-			return unsupported;
-	}
 };
