@@ -6,7 +6,7 @@ import {
 } from "@eskra-aws-playground/integration-discord/discord-command-client.js";
 import { Resource } from "sst/resource";
 
-import { COMMAND_DEFINITIONS } from "@/handlers/function-url/routes/discord-interaction/command-definitions.js";
+import { COMMAND_DEFINITIONS } from "../handlers/function-url/routes/discord-interaction/command-definitions.js";
 
 /** アプリのコマンド定義を Discord API の登録形式へ変換する。 */
 const DISCORD_COMMAND_DEFINITIONS: readonly DiscordCommandDefinition[] =
