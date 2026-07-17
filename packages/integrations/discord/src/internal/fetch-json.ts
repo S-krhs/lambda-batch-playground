@@ -1,23 +1,16 @@
-// In scope: Discord API への JSON POST の timeout 制御・応答検査・エラー整形を共通化する
-// Out of scope: 各 API 固有の URL 組み立て、認証情報の解決、payload 生成を行う
+// In scope: Discord API への JSON GET の timeout 制御・応答検査・エラー整形を共通化し、parse した body を返す
+// Out of scope: 各 API 固有の URL 組み立て、認証情報の解決、応答の意味解釈を行う
 import {
 	sanitizeText,
 	type TextReplacement,
 } from "@eskra-aws-playground/libs/string/text-sanitizer.js";
 
-/** JSON POST 失敗応答の安全化済み詳細。 */
-export interface JsonPostResponseDetails {
-	status: number;
-	body: string;
-}
-
-/** JSON POST の実行に必要な入力。 */
-export interface JsonPostRequest {
+/** JSON GET の実行に必要な入力。 */
+export interface JsonFetchRequest {
 	url: string;
 	headers?: Record<string, string>;
-	payload: unknown;
 	timeoutMs: number;
-	/** エラーメッセージの主語に使う API 名(例: "Discord Webhook")。 */
+	/** エラーメッセージの主語に使う API 名(例: "Discord Command API")。 */
 	apiLabel: string;
 	/** 失敗応答 body へ適用する秘匿置換。 */
 	responseBodyReplacements?: readonly TextReplacement[];
@@ -25,12 +18,11 @@ export interface JsonPostRequest {
 	createError: (message: string, responseDetails?: unknown) => Error;
 }
 
-/** JSON payload を timeout 付きで POST し、失敗を API 固有のエラーにして投げる。 */
-export const postJson = async (request: JsonPostRequest): Promise<void> => {
+/** JSON を timeout 付きで GET し、parse した body を返す。失敗は API 固有のエラーにして投げる。 */
+export const fetchJson = async <T>(request: JsonFetchRequest): Promise<T> => {
 	const {
 		url,
 		headers = {},
-		payload,
 		timeoutMs,
 		apiLabel,
 		responseBodyReplacements = [],
@@ -49,12 +41,8 @@ export const postJson = async (request: JsonPostRequest): Promise<void> => {
 	let response: Response;
 	try {
 		response = await fetch(url, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				...headers,
-			},
-			body: JSON.stringify(payload),
+			method: "GET",
+			headers,
 			signal: controller.signal,
 		});
 	} catch (error) {
@@ -73,16 +61,13 @@ export const postJson = async (request: JsonPostRequest): Promise<void> => {
 	}
 
 	if (!response.ok) {
-		const responseDetails: JsonPostResponseDetails = {
+		throw createError(`${apiLabel} 応答が失敗しました: ${response.status}`, {
 			status: response.status,
 			body: sanitizeText(await response.text(), {
 				replacements: responseBodyReplacements,
 			}),
-		};
-
-		throw createError(
-			`${apiLabel} 応答が失敗しました: ${response.status}`,
-			responseDetails,
-		);
+		});
 	}
+
+	return (await response.json()) as T;
 };

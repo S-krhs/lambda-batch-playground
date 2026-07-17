@@ -173,6 +173,34 @@ describe("discordInteractionRoute", () => {
 		expect(body.data?.flags).toBe(64);
 	});
 
+	it("/hello コマンドには挨拶メッセージを返す", async () => {
+		const rawBody = JSON.stringify({ type: 2, data: { name: "hello" } });
+
+		const body = okBody(await discordInteractionRoute(buildEvent(rawBody)));
+
+		expect(body.type).toBe(4);
+		expect(body.data?.content).toBe("やおよろ～🌚");
+		expect(body.data?.flags).toBeUndefined();
+	});
+
+	it("未対応のコマンドは対応外の ephemeral メッセージを返す", async () => {
+		const rawBody = JSON.stringify({ type: 2, data: { name: "unknown" } });
+
+		const body = okBody(await discordInteractionRoute(buildEvent(rawBody)));
+
+		expect(body.type).toBe(4);
+		expect(body.data?.flags).toBe(64);
+	});
+
+	it("未対応の interaction type は対応外の ephemeral メッセージを返す", async () => {
+		const body = okBody(
+			await discordInteractionRoute(buildEvent('{"type":99}')),
+		);
+
+		expect(body.type).toBe(4);
+		expect(body.data?.flags).toBe(64);
+	});
+
 	it("autocomplete には空の候補一覧を返す", async () => {
 		const result = await discordInteractionRoute(buildEvent('{"type":4}'));
 

@@ -92,6 +92,21 @@ describe("buildInteractionResponse", () => {
 		});
 	});
 
+	it("channel message response を構築する", () => {
+		expect(
+			buildInteractionResponse({
+				kind: "channel-message",
+				content: "やおよろ～🌚",
+			}),
+		).toEqual({
+			type: 4,
+			data: {
+				content: "やおよろ～🌚",
+				allowed_mentions: { parse: [] },
+			},
+		});
+	});
+
 	it("ephemeral response を構築する", () => {
 		expect(
 			buildInteractionResponse({

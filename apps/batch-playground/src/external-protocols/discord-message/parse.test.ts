@@ -19,6 +19,15 @@ describe("parseInteraction / resolveChoice", () => {
 		});
 	});
 
+	it("application command interaction からコマンド名を parse する", () => {
+		expect(parseInteraction('{"type":2,"data":{"name":"hello"}}')).toEqual({
+			type: 2,
+			commandName: "hello",
+			customId: undefined,
+			pressedUserId: undefined,
+		});
+	});
+
 	it("送信時と同じ選択肢定義からボタン選択情報を解決する", () => {
 		const interaction = parseInteraction(
 			'{"type":3,"data":{"custom_id":"test-choice:123:yes"},"member":{"user":{"id":"456"}}}',

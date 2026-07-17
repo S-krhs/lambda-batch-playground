@@ -1,12 +1,9 @@
 // In scope: 指定された Discord Webhook URL へ HTTP リクエストを送信する
 // Out of scope: Webhook URL の解決、メッセージ内容の生成、ジョブ判定を行う
-import {
-	type JsonPostResponseDetails,
-	postJson,
-} from "./internal/post-json.js";
+import { type JsonResponseDetails, sendJson } from "./internal/send-json.js";
 
 /** Discord Webhook 失敗応答の安全化済み詳細。 */
-export type DiscordWebhookResponseDetails = JsonPostResponseDetails;
+export type DiscordWebhookResponseDetails = JsonResponseDetails;
 
 const DISCORD_WEBHOOK_URL_PATTERN =
 	/https:\/\/(?:discord|discordapp)\.com\/api\/webhooks\/[^\s"'<>]+/gi;
@@ -52,7 +49,8 @@ export class DiscordWebhookClient {
 		payload: DiscordPayload,
 		timeoutMs: number = this.defaultTimeoutMs,
 	): Promise<void> {
-		await postJson({
+		await sendJson({
+			method: "POST",
 			url: this.webhookUrl,
 			payload,
 			timeoutMs,
