@@ -39,6 +39,9 @@ describe("DiscordCommandClient", () => {
 		await expect(
 			client.overwriteGuildCommands(APPLICATION_ID, "", commands),
 		).rejects.toThrow(DiscordCommandError);
+		await expect(
+			client.getGuildCommands("not-a-snowflake", GUILD_ID),
+		).rejects.toThrow(DiscordCommandError);
 	});
 
 	it("guild コマンド API へ正しい URL・メソッド・ヘッダー・payload で PUT する", async () => {
@@ -65,6 +68,31 @@ describe("DiscordCommandClient", () => {
 			"Content-Type": "application/json",
 		});
 		expect(JSON.parse(init.body as string)).toEqual(commands);
+	});
+
+	it("guild コマンド API へ正しい URL・メソッド・ヘッダーで GET し、登録済みコマンドを返す", async () => {
+		const registered = [
+			{ id: "999", name: "hello", description: "やおよろ～と挨拶を返す" },
+		];
+		const fetchMock = vi.fn(async () => {
+			return new Response(JSON.stringify(registered), { status: 200 });
+		});
+		vi.stubGlobal("fetch", fetchMock);
+
+		const client = new DiscordCommandClient(BOT_TOKEN);
+		const result = await client.getGuildCommands(APPLICATION_ID, GUILD_ID);
+
+		expect(result).toEqual(registered);
+		const [url, init] = fetchMock.mock.calls[0] as unknown as [
+			string,
+			RequestInit,
+		];
+
+		expect(url).toBe(
+			`https://discord.com/api/v10/applications/${APPLICATION_ID}/guilds/${GUILD_ID}/commands`,
+		);
+		expect(init.method).toBe("GET");
+		expect(init.headers).toEqual({ Authorization: `Bot ${BOT_TOKEN}` });
 	});
 
 	it("失敗応答の本文をエラーメッセージに含めず details で安全化する", async () => {

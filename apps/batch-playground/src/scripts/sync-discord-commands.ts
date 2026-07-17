@@ -1,25 +1,32 @@
 // In scope: 宣言済みのスラッシュコマンド定義を Discord guild へ bulk overwrite で同期する
 // Out of scope: コマンドの応答内容、interaction の解釈、コマンド定義の宣言
-// 実行前提: SST secret を Resource で参照するため `sst shell` 経由で起動する(root の `npm run discord:sync`)。
-//           --dry-run は送信内容を表示するだけで secret も送信も不要(root の `npm run discord:sync:dry`)。
 import { DiscordCommandClient } from "@eskra-aws-playground/integration-discord/discord-command-client.js";
 import { Resource } from "sst/resource";
 
 import { DISCORD_COMMAND_DEFINITIONS } from "../handlers/function-url/routes/discord-interaction/command-definitions.js";
 
+/**
+ * 宣言済みコマンド定義を Discord guild へ bulk overwrite で同期する。
+ * --dry-run では送信せず、現登録と登録予定を並べて表示するだけ。
+ * SST secret を Resource で参照するため `sst shell` 経由で起動する(root の `npm run discord:sync` / `discord:sync:dry`)。
+ */
 const syncDiscordCommands = async (): Promise<void> => {
+	const client = new DiscordCommandClient(Resource.DiscordBotToken.value);
+	const applicationId = Resource.DiscordApplicationId.value;
+	const guildId = Resource.DiscordGuildId.value;
+
 	if (process.argv.includes("--dry-run")) {
-		console.log(
-			"dry-run: 以下の内容で guild コマンドを bulk overwrite します(送信はしません)。",
-		);
+		const current = await client.getGuildCommands(applicationId, guildId);
+		console.log("Discord に現在登録されているコマンド:");
+		console.log(JSON.stringify(current, null, 2));
+		console.log("登録予定(コード):");
 		console.log(JSON.stringify(DISCORD_COMMAND_DEFINITIONS, null, 2));
 		return;
 	}
 
-	const client = new DiscordCommandClient(Resource.DiscordBotToken.value);
 	await client.overwriteGuildCommands(
-		Resource.DiscordApplicationId.value,
-		Resource.DiscordGuildId.value,
+		applicationId,
+		guildId,
 		DISCORD_COMMAND_DEFINITIONS,
 	);
 
