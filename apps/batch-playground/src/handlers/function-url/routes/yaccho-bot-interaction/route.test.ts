@@ -136,7 +136,9 @@ describe("yacchoBotInteractionRoute", () => {
 
 		expect(body.type).toBe(7);
 		expect(body.data?.components).toEqual([]);
-		expect(body.data?.content).toContain("はい（勝った）");
+		expect(body.data?.content).toBe(
+			"∈₍ ᐢ._.ᐢ₎ < やるじゃねぇか まぐれに頼る天才だな",
+		);
 	});
 
 	it("対象外ユーザーのボタン押下は本人にだけ見える専用メッセージを返す", async () => {
@@ -162,6 +164,7 @@ describe("yacchoBotInteractionRoute", () => {
 
 		expect(body.type).toBe(4);
 		expect(body.data?.flags).toBe(64);
+		expect(body.data?.content).toBe("自分で調べろｶｽ");
 	});
 
 	it("prefix 区切りのない custom_id は対応外の ephemeral メッセージを返す", async () => {
@@ -222,7 +225,7 @@ describe("yacchoBotInteractionRoute", () => {
 		});
 		expect(body.type).toBe(4);
 		expect(body.data?.flags).toBe(64);
-		expect(body.data?.content).toContain("有効");
+		expect(body.data?.content).toBe("うけたまかしこまつかまつり〜");
 	});
 
 	it("gamble-check-disable は本人設定だけを削除する", async () => {
@@ -249,7 +252,7 @@ describe("yacchoBotInteractionRoute", () => {
 			userId: targetUserId,
 		});
 		expect(body.type).toBe(4);
-		expect(body.data?.content).toContain("無効");
+		expect(body.data?.content).toBe("りょ～！またね～");
 	});
 
 	it("未対応のコマンドは対応外の ephemeral メッセージを返す", async () => {

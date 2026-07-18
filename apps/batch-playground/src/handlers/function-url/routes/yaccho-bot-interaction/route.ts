@@ -23,7 +23,7 @@ import { discordInteractionRequestSchema } from "./schema.js";
 const logger = createBatchLogger("yaccho-bot-interaction");
 
 const unsupported = (): OperationResult<DiscordInteractionResponsePayload> => {
-	return ephemeralOperation("この操作には対応していません。");
+	return ephemeralOperation("自分で調べろｶｽ");
 };
 
 /** Yaccho Bot の Discord interactions endpoint route。 */

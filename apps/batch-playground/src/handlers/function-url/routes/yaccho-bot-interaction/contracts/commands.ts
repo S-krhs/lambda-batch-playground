@@ -12,13 +12,13 @@ export const commands = {
 	},
 	gambleCheckEnable: {
 		name: "gamble-check-enable",
-		description: "現在のチャンネルで自分の遊技チェックリマインダーを有効にする",
+		description: "ヤチヨの遊技チェックリマインダーを設定する",
 		integration_types: [installationTypes.guild],
 		contexts: [interactionContexts.guild],
 	},
 	gambleCheckDisable: {
 		name: "gamble-check-disable",
-		description: "自分の遊技チェックリマインダーを無効にする",
+		description: "ヤチヨの遊技チェックリマインダーを停止する",
 		integration_types: [installationTypes.guild],
 		contexts: [interactionContexts.guild],
 	},

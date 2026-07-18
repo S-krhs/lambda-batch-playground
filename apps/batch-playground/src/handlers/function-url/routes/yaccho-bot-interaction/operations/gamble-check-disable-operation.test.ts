@@ -45,9 +45,7 @@ describe("gambleCheckDisableOperation", () => {
 			guildId: "111",
 			userId: "333",
 		});
-		expect(result.data.data.content).toBe(
-			"自分のリマインダーを無効にしました。",
-		);
+		expect(result.data.data.content).toBe("りょ～！またね～");
 	});
 
 	it("設定が無ければその旨を返す", async () => {
@@ -56,7 +54,7 @@ describe("gambleCheckDisableOperation", () => {
 		const result = await gambleCheckDisableOperation(guildCommand());
 
 		expect(result.data.data.content).toBe(
-			"自分のリマインダーは設定されていません。",
+			"よよよ……リマインダーはまだ設定されていないのです～",
 		);
 	});
 
@@ -71,6 +69,6 @@ describe("gambleCheckDisableOperation", () => {
 		expect(
 			channelSettingRepository.deleteByGuildIdAndUserId,
 		).not.toHaveBeenCalled();
-		expect(result.data.data.content).toContain("サーバー内");
+		expect(result.data.data.content).toBe("サーバー内のチャンネルで使ってね～");
 	});
 });

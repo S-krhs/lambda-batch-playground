@@ -19,13 +19,17 @@ const execute = (customId: string, pressedUserId: string) => {
 };
 
 describe("playCheckReminderOperation", () => {
-	it("対象ユーザーの選択には OK と元メッセージを更新する payload を返す", () => {
-		expect(execute("play-check-reminder:123:won", "123")).toEqual({
+	it.each([
+		["won", "∈₍ ᐢ._.ᐢ₎ < やるじゃねぇか まぐれに頼る天才だな"],
+		["lost", "養分乙"],
+		["not-played", "今日は遊技なし！めでたしめでたし～"],
+	])("対象ユーザーの %s 選択には選択肢ごとの文言で元メッセージを更新する", (action, responseMessage) => {
+		expect(execute(`play-check-reminder:123:${action}`, "123")).toEqual({
 			kind: "OK",
 			data: {
 				type: 7,
 				data: {
-					content: "でれれれれれ～、**はい（勝った）**！",
+					content: responseMessage,
 					components: [],
 					allowed_mentions: { parse: [] },
 				},
@@ -39,8 +43,7 @@ describe("playCheckReminderOperation", () => {
 			data: {
 				type: 4,
 				data: {
-					content:
-						"このリマインダーは <@123> さんしか使えないのです～、よよよ……",
+					content: "よよよ……これは <@123> さん専用なのです",
 					flags: 64,
 					allowed_mentions: { parse: [] },
 				},

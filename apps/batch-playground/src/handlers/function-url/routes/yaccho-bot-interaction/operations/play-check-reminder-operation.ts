@@ -52,7 +52,7 @@ export const playCheckReminderOperation = (
 			data: {
 				type: responseTypes.message,
 				data: {
-					content: `このリマインダーは <@${targetUserId}> さんしか使えないのです～、よよよ……`,
+					content: `よよよ……これは <@${targetUserId}> さん専用なのです`,
 					flags: messageFlags.ephemeral,
 					allowed_mentions: { parse: [] },
 				},
@@ -65,7 +65,7 @@ export const playCheckReminderOperation = (
 		data: {
 			type: responseTypes.update,
 			data: {
-				content: `でれれれれれ～、**${choice.label}**！`,
+				content: choice.responseMessage,
 				components: [],
 				allowed_mentions: { parse: [] },
 			},

@@ -43,7 +43,7 @@ describe("gambleCheckEnableOperation", () => {
 			data: {
 				type: 4,
 				data: {
-					content: "このチャンネルで自分のリマインダーを有効にしました。",
+					content: "うけたまかしこまつかまつり〜",
 					flags: 64,
 					allowed_mentions: { parse: [] },
 				},
@@ -60,6 +60,6 @@ describe("gambleCheckEnableOperation", () => {
 		});
 
 		expect(channelSettingRepository.save).not.toHaveBeenCalled();
-		expect(result.data.data.content).toContain("サーバー内");
+		expect(result.data.data.content).toBe("サーバー内のチャンネルで使ってね～");
 	});
 });

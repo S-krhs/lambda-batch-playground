@@ -14,7 +14,7 @@ export const gambleCheckDisableOperation = async (
 	interaction: DiscordApplicationCommandInteraction,
 ): Promise<OperationResult<DiscordEphemeralResponsePayload>> => {
 	if (interaction.context.kind !== "guild") {
-		return ephemeralOperation("サーバー内のチャンネルから実行してください。");
+		return ephemeralOperation("サーバー内のチャンネルで使ってね～");
 	}
 
 	const deletedSetting =
@@ -26,7 +26,7 @@ export const gambleCheckDisableOperation = async (
 		});
 	return ephemeralOperation(
 		deletedSetting
-			? "自分のリマインダーを無効にしました。"
-			: "自分のリマインダーは設定されていません。",
+			? "りょ～！またね～"
+			: "よよよ……リマインダーはまだ設定されていないのです～",
 	);
 };

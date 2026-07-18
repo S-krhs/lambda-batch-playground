@@ -14,7 +14,7 @@ export const gambleCheckEnableOperation = async (
 	interaction: DiscordApplicationCommandInteraction,
 ): Promise<OperationResult<DiscordEphemeralResponsePayload>> => {
 	if (interaction.context.kind !== "guild" || !interaction.context.channelId) {
-		return ephemeralOperation("サーバー内のチャンネルから実行してください。");
+		return ephemeralOperation("サーバー内のチャンネルで使ってね～");
 	}
 
 	await channelSettingRepository.save({
@@ -24,7 +24,5 @@ export const gambleCheckEnableOperation = async (
 		channelId: interaction.context.channelId,
 		userId: interaction.userId,
 	});
-	return ephemeralOperation(
-		"このチャンネルで自分のリマインダーを有効にしました。",
-	);
+	return ephemeralOperation("うけたまかしこまつかまつり〜");
 };
