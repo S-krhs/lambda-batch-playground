@@ -149,7 +149,6 @@ export default $config({
 				"../apps/batch-playground/src/handlers/function-url/handler.handler",
 			runtime: "nodejs22.x",
 			timeout: "10 seconds",
-			// Discord interaction の 3 秒制限にコールドスタートでも間に合わせるため 128 MB から増強
 			memory: "512 MB",
 			link: [
 				yacchoDiscordInteractionPublicKey,

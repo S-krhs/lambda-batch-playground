@@ -1,6 +1,6 @@
 // In scope: Function URL の公開エンドポイントとして envelope を検証し、リクエストパスから担当 route へ委譲する
 // Out of scope: 署名検証、interaction 内容の解釈、応答 payload の中身を持つ
-import { warmupDatabaseConnection } from "@eskra-aws-playground/repositories/playground/shared/db-warmup.js";
+import { warmupDatabaseConnection } from "@eskra-aws-playground/repositories/playground/shared/db/db-warmup.js";
 import { paths } from "./contracts/paths.js";
 import { kaguyaBotInteractionRoute } from "./routes/kaguya-bot-interaction/route.js";
 import { yacchoBotInteractionRoute } from "./routes/yaccho-bot-interaction/route.js";
