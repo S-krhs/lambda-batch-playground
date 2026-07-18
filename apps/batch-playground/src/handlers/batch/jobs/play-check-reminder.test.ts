@@ -4,7 +4,7 @@ import { playCheckReminderJob } from "./play-check-reminder.js";
 const discord = vi.hoisted(() => {
 	return { constructor: vi.fn(), postChannelMessage: vi.fn() };
 });
-const reminderConfigRepository = vi.hoisted(() => {
+const channelSettingRepository = vi.hoisted(() => {
 	return { findMany: vi.fn() };
 });
 
@@ -22,11 +22,12 @@ vi.mock(
 		};
 	},
 );
-vi.mock("@/features/play-check-reminder/reminder-config-store.js", () => {
-	return {
-		reminderConfigStore: reminderConfigRepository,
-	};
-});
+vi.mock(
+	"@eskra-aws-playground/repositories/playground/channel-setting/repository.js",
+	() => {
+		return { channelSettingRepository };
+	},
+);
 vi.mock("sst/resource", () => {
 	return {
 		Resource: { YacchoDiscordBotToken: { value: "yaccho-token" } },
@@ -36,14 +37,22 @@ vi.mock("sst/resource", () => {
 beforeEach(() => {
 	discord.constructor.mockReset();
 	discord.postChannelMessage.mockReset();
-	reminderConfigRepository.findMany.mockReset();
+	channelSettingRepository.findMany.mockReset();
 });
 
 describe("playCheckReminderJob", () => {
 	it("DBに登録された全利用者へ質問と選択肢を投稿する", async () => {
-		reminderConfigRepository.findMany.mockResolvedValue([
-			{ guildId: "1", channelId: "11", userId: "111" },
-			{ guildId: "2", channelId: "22", userId: "222" },
+		channelSettingRepository.findMany.mockResolvedValue([
+			{
+				guildId: "1",
+				channelId: "11",
+				userId: "111",
+			},
+			{
+				guildId: "2",
+				channelId: "22",
+				userId: "222",
+			},
 		]);
 		discord.postChannelMessage.mockResolvedValue(undefined);
 
@@ -53,6 +62,10 @@ describe("playCheckReminderJob", () => {
 			details: { configCount: 2 },
 		});
 		expect(discord.constructor).toHaveBeenCalledWith("yaccho-token");
+		expect(channelSettingRepository.findMany).toHaveBeenCalledWith({
+			applicationKey: "yaccho-bot",
+			settingKey: "play-check-reminder",
+		});
 		expect(discord.postChannelMessage).toHaveBeenCalledTimes(4);
 		expect(discord.postChannelMessage).toHaveBeenCalledWith(
 			"11",
@@ -65,9 +78,17 @@ describe("playCheckReminderJob", () => {
 	});
 
 	it("一部が失敗しても全利用者への投稿を試してから失敗する", async () => {
-		reminderConfigRepository.findMany.mockResolvedValue([
-			{ guildId: "1", channelId: "11", userId: "111" },
-			{ guildId: "2", channelId: "22", userId: "222" },
+		channelSettingRepository.findMany.mockResolvedValue([
+			{
+				guildId: "1",
+				channelId: "11",
+				userId: "111",
+			},
+			{
+				guildId: "2",
+				channelId: "22",
+				userId: "222",
+			},
 		]);
 		discord.postChannelMessage
 			.mockRejectedValueOnce(new Error("first failed"))

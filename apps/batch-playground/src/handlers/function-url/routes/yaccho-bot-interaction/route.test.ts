@@ -27,13 +27,16 @@ vi.mock("sst/resource", () => {
 	};
 });
 
-const reminderConfigStore = vi.hoisted(() => {
+const channelSettingRepository = vi.hoisted(() => {
 	return { save: vi.fn(), deleteByGuildIdAndUserId: vi.fn() };
 });
 
-vi.mock("@/features/play-check-reminder/reminder-config-store.js", () => {
-	return { reminderConfigStore };
-});
+vi.mock(
+	"@eskra-aws-playground/repositories/playground/channel-setting/repository.js",
+	() => {
+		return { channelSettingRepository };
+	},
+);
 
 const timestamp = "1720000000";
 const signature = "test-signature";
@@ -88,8 +91,8 @@ const okBody = (
 beforeEach(() => {
 	verifier.verifyInteractionSignature.mockReset();
 	verifier.verifyInteractionSignature.mockReturnValue(true);
-	reminderConfigStore.save.mockReset();
-	reminderConfigStore.deleteByGuildIdAndUserId.mockReset();
+	channelSettingRepository.save.mockReset();
+	channelSettingRepository.deleteByGuildIdAndUserId.mockReset();
 });
 
 describe("yacchoBotInteractionRoute", () => {
@@ -210,7 +213,9 @@ describe("yacchoBotInteractionRoute", () => {
 
 		const body = okBody(await yacchoBotInteractionRoute(buildEvent(rawBody)));
 
-		expect(reminderConfigStore.save).toHaveBeenCalledWith({
+		expect(channelSettingRepository.save).toHaveBeenCalledWith({
+			applicationKey: "yaccho-bot",
+			settingKey: "play-check-reminder",
 			guildId: "555555555555555555",
 			channelId: "666666666666666666",
 			userId: targetUserId,
@@ -221,7 +226,11 @@ describe("yacchoBotInteractionRoute", () => {
 	});
 
 	it("gamble-check-disable は本人設定だけを削除する", async () => {
-		reminderConfigStore.deleteByGuildIdAndUserId.mockResolvedValue(true);
+		channelSettingRepository.deleteByGuildIdAndUserId.mockResolvedValue({
+			guildId: "555555555555555555",
+			channelId: "666666666666666666",
+			userId: targetUserId,
+		});
 		const rawBody = JSON.stringify({
 			type: 2,
 			data: { name: "gamble-check-disable" },
@@ -231,10 +240,14 @@ describe("yacchoBotInteractionRoute", () => {
 
 		const body = okBody(await yacchoBotInteractionRoute(buildEvent(rawBody)));
 
-		expect(reminderConfigStore.deleteByGuildIdAndUserId).toHaveBeenCalledWith(
-			"555555555555555555",
-			targetUserId,
-		);
+		expect(
+			channelSettingRepository.deleteByGuildIdAndUserId,
+		).toHaveBeenCalledWith({
+			applicationKey: "yaccho-bot",
+			settingKey: "play-check-reminder",
+			guildId: "555555555555555555",
+			userId: targetUserId,
+		});
 		expect(body.type).toBe(4);
 		expect(body.data?.content).toContain("無効");
 	});

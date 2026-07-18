@@ -3,13 +3,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DiscordApplicationCommandInteraction } from "@/external-protocols/discord-message/parse.js";
 import { gambleCheckDisableOperation } from "./gamble-check-disable-operation.js";
 
-const reminderConfigStore = vi.hoisted(() => {
-	return { save: vi.fn(), deleteByGuildIdAndUserId: vi.fn() };
+const channelSettingRepository = vi.hoisted(() => {
+	return { deleteByGuildIdAndUserId: vi.fn() };
 });
 
-vi.mock("@/features/play-check-reminder/reminder-config-store.js", () => {
-	return { reminderConfigStore };
-});
+vi.mock(
+	"@eskra-aws-playground/repositories/playground/channel-setting/repository.js",
+	() => {
+		return { channelSettingRepository };
+	},
+);
 
 const guildCommand = (userId = "333"): DiscordApplicationCommandInteraction => {
 	return {
@@ -21,26 +24,34 @@ const guildCommand = (userId = "333"): DiscordApplicationCommandInteraction => {
 };
 
 beforeEach(() => {
-	reminderConfigStore.deleteByGuildIdAndUserId.mockReset();
+	channelSettingRepository.deleteByGuildIdAndUserId.mockReset();
 });
 
 describe("gambleCheckDisableOperation", () => {
 	it("実行者本人の設定だけを削除する", async () => {
-		reminderConfigStore.deleteByGuildIdAndUserId.mockResolvedValue(true);
+		channelSettingRepository.deleteByGuildIdAndUserId.mockResolvedValue({
+			guildId: "111",
+			channelId: "222",
+			userId: "333",
+		});
 
 		const result = await gambleCheckDisableOperation(guildCommand());
 
-		expect(reminderConfigStore.deleteByGuildIdAndUserId).toHaveBeenCalledWith(
-			"111",
-			"333",
-		);
+		expect(
+			channelSettingRepository.deleteByGuildIdAndUserId,
+		).toHaveBeenCalledWith({
+			applicationKey: "yaccho-bot",
+			settingKey: "play-check-reminder",
+			guildId: "111",
+			userId: "333",
+		});
 		expect(result.data.data.content).toBe(
 			"自分のリマインダーを無効にしました。",
 		);
 	});
 
 	it("設定が無ければその旨を返す", async () => {
-		reminderConfigStore.deleteByGuildIdAndUserId.mockResolvedValue(false);
+		channelSettingRepository.deleteByGuildIdAndUserId.mockResolvedValue(null);
 
 		const result = await gambleCheckDisableOperation(guildCommand());
 
@@ -57,7 +68,9 @@ describe("gambleCheckDisableOperation", () => {
 			context: { kind: "direct-message" },
 		});
 
-		expect(reminderConfigStore.deleteByGuildIdAndUserId).not.toHaveBeenCalled();
+		expect(
+			channelSettingRepository.deleteByGuildIdAndUserId,
+		).not.toHaveBeenCalled();
 		expect(result.data.data.content).toContain("サーバー内");
 	});
 });

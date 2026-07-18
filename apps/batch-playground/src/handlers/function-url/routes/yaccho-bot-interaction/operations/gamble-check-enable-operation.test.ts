@@ -3,13 +3,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DiscordApplicationCommandInteraction } from "@/external-protocols/discord-message/parse.js";
 import { gambleCheckEnableOperation } from "./gamble-check-enable-operation.js";
 
-const reminderConfigStore = vi.hoisted(() => {
-	return { save: vi.fn(), deleteByGuildIdAndUserId: vi.fn() };
+const channelSettingRepository = vi.hoisted(() => {
+	return { save: vi.fn() };
 });
 
-vi.mock("@/features/play-check-reminder/reminder-config-store.js", () => {
-	return { reminderConfigStore };
-});
+vi.mock(
+	"@eskra-aws-playground/repositories/playground/channel-setting/repository.js",
+	() => {
+		return { channelSettingRepository };
+	},
+);
 
 const guildCommand = (userId = "333"): DiscordApplicationCommandInteraction => {
 	return {
@@ -21,14 +24,16 @@ const guildCommand = (userId = "333"): DiscordApplicationCommandInteraction => {
 };
 
 beforeEach(() => {
-	reminderConfigStore.save.mockReset();
+	channelSettingRepository.save.mockReset();
 });
 
 describe("gambleCheckEnableOperation", () => {
 	it("現在の Guild・channel と実行者本人で有効化する", async () => {
 		const result = await gambleCheckEnableOperation(guildCommand());
 
-		expect(reminderConfigStore.save).toHaveBeenCalledWith({
+		expect(channelSettingRepository.save).toHaveBeenCalledWith({
+			applicationKey: "yaccho-bot",
+			settingKey: "play-check-reminder",
 			guildId: "111",
 			channelId: "222",
 			userId: "333",
@@ -54,7 +59,7 @@ describe("gambleCheckEnableOperation", () => {
 			context: { kind: "direct-message" },
 		});
 
-		expect(reminderConfigStore.save).not.toHaveBeenCalled();
+		expect(channelSettingRepository.save).not.toHaveBeenCalled();
 		expect(result.data.data.content).toContain("サーバー内");
 	});
 });
