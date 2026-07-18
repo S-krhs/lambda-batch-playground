@@ -46,13 +46,17 @@ jobs:
           SST_SECRET_AnimeAnalysisDiscordWebhook: ${{ secrets.ANIME_ANALYSIS_DISCORD_WEBHOOK_URL }}
           SST_SECRET_AlertDiscordWebhook: ${{ secrets.ALERT_DISCORD_WEBHOOK_URL }}
           SST_SECRET_DatabaseUrl: ${{ secrets.DATABASE_URL }}
-          SST_SECRET_DiscordBotToken: ${{ secrets.DISCORD_BOT_TOKEN }}
-          SST_SECRET_DiscordInteractionPublicKey: ${{ secrets.DISCORD_INTERACTION_PUBLIC_KEY }}
-          SST_SECRET_DiscordApplicationId: ${{ secrets.DISCORD_APPLICATION_ID }}
-          SST_SECRET_DiscordGuildId: ${{ secrets.DISCORD_GUILD_ID }}
-          SST_SECRET_PlayCheckReminderDiscordChannelId: ${{ secrets.PLAY_CHECK_REMINDER_DISCORD_CHANNEL_ID }}
-          SST_SECRET_PlayCheckReminderTargetUserId: ${{ secrets.PLAY_CHECK_REMINDER_TARGET_USER_ID }}
+          SST_SECRET_YacchoDiscordBotToken: ${{ secrets.YACCHO_DISCORD_BOT_TOKEN }}
+          SST_SECRET_YacchoDiscordInteractionPublicKey: ${{ secrets.YACCHO_DISCORD_INTERACTION_PUBLIC_KEY }}
+          SST_SECRET_YacchoDiscordApplicationId: ${{ secrets.YACCHO_DISCORD_APPLICATION_ID }}
+          SST_SECRET_KaguyaDiscordBotToken: ${{ secrets.KAGUYA_DISCORD_BOT_TOKEN }}
+          SST_SECRET_KaguyaDiscordInteractionPublicKey: ${{ secrets.KAGUYA_DISCORD_INTERACTION_PUBLIC_KEY }}
+          SST_SECRET_KaguyaDiscordApplicationId: ${{ secrets.KAGUYA_DISCORD_APPLICATION_ID }}
       # deploy 済みのエンドポイントへ宣言済みスラッシュコマンドを bulk overwrite で同期する。
       # secret は develop stage の SST secret を sst shell 経由で参照する(build は deploy step 済み)
       - name: Sync Discord commands
         run: npx sst shell --stage develop --config infra/sst.config.ts -- npm run discord:sync:run
+      # 一回限り: guild scope から global scope への移行で残る旧 Yaccho Bot guild command を削除する。
+      # 初回デプロイの成功後にこの step を削除する。guild ID は旧 DISCORD_GUILD_ID secret を CLI 引数で渡す。
+      - name: Clear old Yaccho guild commands (one-time)
+        run: npx sst shell --stage develop --config infra/sst.config.ts -- node apps/batch-playground/dist/scripts/clear-yaccho-guild-commands.js "${{ secrets.DISCORD_GUILD_ID }}"

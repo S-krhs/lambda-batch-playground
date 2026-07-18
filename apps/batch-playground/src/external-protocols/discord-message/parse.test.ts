@@ -1,82 +1,173 @@
 import { describe, expect, it } from "vitest";
 
-import { parseInteraction, resolveChoice } from "./parse.js";
+import { parseInteraction } from "./parse.js";
 
-const choiceDefinition = {
-	customIdPrefix: "test-choice",
-	choices: [
-		{ id: "yes", label: "はい", tone: "positive" },
-		{ id: "no", label: "いいえ", tone: "negative" },
-	],
-} as const;
-
-describe("parseInteraction / resolveChoice", () => {
+describe("parseInteraction", () => {
 	it("PING interaction を parse する", () => {
-		expect(parseInteraction('{"type":1}')).toEqual({
-			type: 1,
-			customId: undefined,
-			pressedUserId: undefined,
+		expect(parseInteraction('{"type":1}')).toEqual({ kind: "ping" });
+	});
+
+	it("application command を command と実行コンテキストへ分けて parse する", () => {
+		expect(
+			parseInteraction(
+				'{"type":2,"data":{"name":"hello"},"user":{"id":"123"}}',
+			),
+		).toEqual({
+			kind: "application-command",
+			userId: "123",
+			command: { name: "hello", options: [] },
+			context: { kind: "direct-message" },
 		});
 	});
 
-	it("application command interaction からコマンド名を parse する", () => {
-		expect(parseInteraction('{"type":2,"data":{"name":"hello"}}')).toEqual({
-			type: 2,
-			commandName: "hello",
-			customId: undefined,
-			pressedUserId: undefined,
+	it("未対応 option は command 全体を不正にせず意味未解釈として保持する", () => {
+		expect(
+			parseInteraction(
+				'{"type":2,"data":{"name":"search","options":[{"type":3,"name":"query","value":"hello"}]},"user":{"id":"123"}}',
+			),
+		).toMatchObject({
+			kind: "application-command",
+			command: {
+				name: "search",
+				options: [{ kind: "unsupported", discordType: 3, name: "query" }],
+			},
 		});
 	});
 
-	it("送信時と同じ選択肢定義からボタン選択情報を解決する", () => {
-		const interaction = parseInteraction(
-			'{"type":3,"data":{"custom_id":"test-choice:123:yes"},"member":{"user":{"id":"456"}}}',
-		);
-		if (!interaction) {
-			throw new Error("test interaction の parse に失敗しました");
-		}
+	it("既知 option type の value・options 契約違反は parse しない", () => {
+		expect(
+			parseInteraction(
+				'{"type":2,"data":{"name":"broken","options":[{"type":1,"name":"subcommand","value":"invalid"}]},"user":{"id":"123"}}',
+			),
+		).toBeUndefined();
+		expect(
+			parseInteraction(
+				'{"type":2,"data":{"name":"broken","options":[{"type":6,"name":"target","value":"123","options":[]}]},"user":{"id":"123"}}',
+			),
+		).toBeUndefined();
+	});
 
-		expect(resolveChoice(interaction, choiceDefinition)).toEqual({
-			choiceId: "yes",
-			choiceLabel: "はい",
-			pressedUserId: "456",
-			targetUserId: "123",
+	it("guild command の場所・実行者・subcommand option を parse する", () => {
+		expect(
+			parseInteraction(
+				JSON.stringify({
+					type: 2,
+					guild_id: "111",
+					channel_id: "222",
+					member: { user: { id: "333" } },
+					data: {
+						name: "example",
+						options: [
+							{
+								type: 1,
+								name: "assign",
+								options: [{ type: 6, name: "member", value: "444" }],
+							},
+						],
+					},
+				}),
+			),
+		).toEqual({
+			kind: "application-command",
+			userId: "333",
+			command: {
+				name: "example",
+				options: [
+					{
+						kind: "subcommand",
+						name: "assign",
+						options: [{ kind: "user", name: "member", userId: "444" }],
+					},
+				],
+			},
+			context: {
+				kind: "guild",
+				guildId: "111",
+				channelId: "222",
+			},
 		});
 	});
 
-	it("DM interaction の user ID からボタン選択情報を解決する", () => {
-		const interaction = parseInteraction(
-			'{"type":3,"data":{"custom_id":"test-choice:123:no"},"user":{"id":"123"}}',
-		);
-		if (!interaction) {
-			throw new Error("test interaction の parse に失敗しました");
-		}
-
-		expect(resolveChoice(interaction, choiceDefinition)).toEqual({
-			choiceId: "no",
-			choiceLabel: "いいえ",
-			pressedUserId: "123",
-			targetUserId: "123",
+	it("message component を custom ID と操作ユーザーへ変換する", () => {
+		expect(
+			parseInteraction(
+				'{"type":3,"data":{"custom_id":"test-choice:123:yes"},"member":{"user":{"id":"456"}}}',
+			),
+		).toEqual({
+			kind: "message-component",
+			customId: {
+				prefix: "test-choice",
+				target: "123",
+				action: "yes",
+			},
+			userId: "456",
 		});
 	});
 
-	it("定義にない prefix・choice ID は解決しない", () => {
-		const unknownPrefix = parseInteraction(
-			'{"type":3,"data":{"custom_id":"unknown:123:yes"},"user":{"id":"123"}}',
-		);
-		const unknownChoice = parseInteraction(
-			'{"type":3,"data":{"custom_id":"test-choice:123:unknown"},"user":{"id":"123"}}',
-		);
-		if (!unknownPrefix || !unknownChoice) {
-			throw new Error("test interaction の parse に失敗しました");
-		}
+	it("DM component ではトップレベルの user ID を取り出す", () => {
+		expect(
+			parseInteraction(
+				'{"type":3,"data":{"custom_id":"test-choice:123:no"},"user":{"id":"123"}}',
+			),
+		).toEqual({
+			kind: "message-component",
+			customId: {
+				prefix: "test-choice",
+				target: "123",
+				action: "no",
+			},
+			userId: "123",
+		});
+	});
 
-		expect(resolveChoice(unknownPrefix, choiceDefinition)).toBeUndefined();
-		expect(resolveChoice(unknownChoice, choiceDefinition)).toBeUndefined();
+	it("target のない custom_id も共通規約で parse する", () => {
+		expect(
+			parseInteraction(
+				'{"type":3,"data":{"custom_id":"refresh-panel::refresh"},"user":{"id":"123"}}',
+			),
+		).toEqual({
+			kind: "message-component",
+			customId: { prefix: "refresh-panel", action: "refresh" },
+			userId: "123",
+		});
+	});
+
+	it("共通規約に合わない custom_id は未解釈として保持する", () => {
+		expect(
+			parseInteraction(
+				'{"type":3,"data":{"custom_id":"invalid-custom-id"},"user":{"id":"123"}}',
+			),
+		).toEqual({
+			kind: "message-component",
+			customId: null,
+			userId: "123",
+		});
+	});
+
+	it("未対応の interaction type を不正リクエストと混同しない", () => {
+		expect(
+			parseInteraction('{"type":99,"data":{"options":"unknown-shape"}}'),
+		).toEqual({
+			kind: "unsupported",
+			discordType: 99,
+		});
 	});
 
 	it("不正な JSON・interaction 構造は parse しない", () => {
 		expect(parseInteraction("not-a-json")).toBeUndefined();
 		expect(parseInteraction('{"type":"1"}')).toBeUndefined();
+		expect(parseInteraction('{"type":2}')).toBeUndefined();
+		expect(
+			parseInteraction('{"type":2,"data":{"name":"hello"}}'),
+		).toBeUndefined();
+		expect(
+			parseInteraction(
+				'{"type":4,"data":{"name":"hello"},"user":{"id":"123"}}',
+			),
+		).toEqual({ kind: "autocomplete" });
+		expect(parseInteraction('{"type":4}')).toBeUndefined();
+		expect(
+			parseInteraction('{"type":3,"data":{"custom_id":"test-choice:123:yes"}}'),
+		).toBeUndefined();
 	});
 });

@@ -18,5 +18,11 @@
 - `generated/`: `prisma generate` の出力(Prisma Client / Zod schema)。git 管理せず、`postinstall` で再生成される。
 - `db/` と `generated/` は package.json の exports に含めない。app からの import は解決エラーになり、この性質を境界の強制に使う。
 - 接続先は env var 契約とする。runtime は `DATABASE_URL`(pooled)だけを読み、SST や app 側の resolver には依存しない。
-- insert 前の row validation には `generated/zod` の schema を使う。生成 schema と Prisma の型は repository の公開 API(引数・戻り値)に露出しない。
+- 通常の insert 前 row validation には `generated/zod` の schema を使う。JSONB の用途固有 schema は生成できないため、該当 repository 内の Zod schema で保存前と読み出し時の両方を検証する。生成 schema と Prisma の型は repository の公開 API(引数・戻り値)に露出しない。
 - 実 DB を使う integration test は `TEST_DATABASE_URL`(ローカル用 Neon branch)が設定されている場合のみ実行される。
+
+## 配置
+
+- 用途固有の公開型、validation schema、DB 操作がそれぞれ存在する repository は、用途名のディレクトリ配下へ `type.ts`、`schema.ts`、`repository.ts` を置く。integration test は同じディレクトリの `repository.integration.test.ts` とする。
+- `repository.ts` は公開型を `type.ts`、用途固有の Zod schema を `schema.ts` から import し、DB 操作と行から公開型への変換を担当する。
+- 独立した型や用途固有 schema を持たない単純な repository は単一ファイルのままとし、形式を揃えるためだけの空の `type.ts` や `schema.ts` は作らない。
