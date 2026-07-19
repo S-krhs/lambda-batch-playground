@@ -114,3 +114,19 @@ secret は stage ごとに `npx sst secret set` で設定します。
 ```bash
 npx sst diff --stage develop --config infra/sst.config.ts
 ```
+
+### local stage への手動デプロイ
+
+ローカル検証用に `local` stage へ実リソースをデプロイする場合は `npm run deploy:local` を使います（CD は通さない）。初回のみ次のセットアップが必要です。
+
+1. SST がリソースを作成できる AWS credentials を用意する。
+2. DB migration を local 用 Neon branch へ適用する。root `.env` に local branch の direct 接続文字列を `DIRECT_DATABASE_URL` として置き、`npm run db:migrate` を実行する。
+3. `local` stage に SST secret を登録する。必要なのは `infra/sst.config.ts` の `sst.Secret` 全 10 個（`DatabaseUrl`・`UmaOneDrawTopicDiscordWebhook`・`AnimeAnalysisDiscordWebhook`・`AlertDiscordWebhook`・`YacchoDiscord*` 3 値・`KaguyaDiscord*` 3 値）。`DatabaseUrl` には local branch の pooled 接続文字列を設定する。Webhook 系に本番と同じ URL を設定すると実送信が起きる点に注意する。
+
+   ```bash
+   npx sst secret set DatabaseUrl <値> --stage local --config infra/sst.config.ts
+   npx sst secret list --stage local --config infra/sst.config.ts
+   ```
+
+4. `npm run deploy:local` を実行する（browser runtime Layer の build は script 内で行われる）。
+5. 検証を終えて stage ごと破棄する場合は `npx sst remove --stage local --config infra/sst.config.ts` を実行する。
