@@ -19,7 +19,6 @@
 		"build": "turbo run build",
 		"build:browser-runtime-layer": "node infra/layers/browser-runtime/build.mjs",
 		"deploy": "npm run build && npm run build:browser-runtime-layer && sst deploy --stage develop --config infra/sst.config.ts",
-		"deploy:local": "npm run build && npm run build:browser-runtime-layer && sst deploy --stage local --config infra/sst.config.ts",
 		"discord:sync": "npm run build && sst shell --config infra/sst.config.ts -- npm run discord:sync:run",
 		"discord:sync:run": "node apps/batch-playground/dist/scripts/sync-discord-commands.js",
 		"discord:sync:dry": "npm run build && sst shell --config infra/sst.config.ts -- npm run discord:sync:run -- --dry-run",

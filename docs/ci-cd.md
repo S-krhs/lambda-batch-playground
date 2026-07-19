@@ -115,32 +115,32 @@ secret は stage ごとに `npx sst secret set` で設定します。
 npx sst diff --stage develop --config infra/sst.config.ts
 ```
 
-### local stage への手動デプロイ
+### ローカル検証の初回セットアップ
 
-ローカル検証用に `local` stage へ実リソースをデプロイする場合は `npm run deploy:local` を使います（CD は通さない）。初回のみ次のセットアップが必要です。
+`npm run dev` は personal stage に SQS や secret などの実リソースを作成し、Lambda handler はローカルで実行します。schedule 起動の Scheduler（cron）は `sst dev` では作成されないため、セッション終了後にバッチが勝手に動くことはありません。初回のみ次のセットアップが必要です。
 
 1. SST がリソースを作成できる AWS credentials を用意する。
 2. DB migration を local 用 Neon branch へ適用する。root `.env` に local branch の direct 接続文字列を `DIRECT_DATABASE_URL` として置き、`npm run db:migrate` を実行する。
-3. `local` stage に SST secret を登録する（`infra/sst.config.ts` の `sst.Secret` 全 10 個）。`DatabaseUrl` には local branch の pooled 接続文字列を設定する。Webhook 系に本番と同じ URL を設定すると実送信が起きる点に注意する。
+3. personal stage に SST secret を登録する（`--stage` 省略時は personal stage）。`DatabaseUrl` には local branch の pooled 接続文字列を設定する。Webhook 系に本番と同じ URL を設定すると実送信が起きる点に注意する。
 
    ```bash
-   npx sst secret set DatabaseUrl <local branch の pooled 接続文字列> --stage local --config infra/sst.config.ts
-   npx sst secret set UmaOneDrawTopicDiscordWebhook <値> --stage local --config infra/sst.config.ts
-   npx sst secret set AnimeAnalysisDiscordWebhook <値> --stage local --config infra/sst.config.ts
-   npx sst secret set AlertDiscordWebhook <値> --stage local --config infra/sst.config.ts
-   npx sst secret set YacchoDiscordBotToken <値> --stage local --config infra/sst.config.ts
-   npx sst secret set YacchoDiscordInteractionPublicKey <値> --stage local --config infra/sst.config.ts
-   npx sst secret set YacchoDiscordApplicationId <値> --stage local --config infra/sst.config.ts
-   npx sst secret set KaguyaDiscordBotToken <値> --stage local --config infra/sst.config.ts
-   npx sst secret set KaguyaDiscordInteractionPublicKey <値> --stage local --config infra/sst.config.ts
-   npx sst secret set KaguyaDiscordApplicationId <値> --stage local --config infra/sst.config.ts
+   npx sst secret set DatabaseUrl <local branch の pooled 接続文字列> --config infra/sst.config.ts
+   npx sst secret set UmaOneDrawTopicDiscordWebhook <値> --config infra/sst.config.ts
+   npx sst secret set AnimeAnalysisDiscordWebhook <値> --config infra/sst.config.ts
+   npx sst secret set AlertDiscordWebhook <値> --config infra/sst.config.ts
+   npx sst secret set YacchoDiscordBotToken <値> --config infra/sst.config.ts
+   npx sst secret set YacchoDiscordInteractionPublicKey <値> --config infra/sst.config.ts
+   npx sst secret set YacchoDiscordApplicationId <値> --config infra/sst.config.ts
+   npx sst secret set KaguyaDiscordBotToken <値> --config infra/sst.config.ts
+   npx sst secret set KaguyaDiscordInteractionPublicKey <値> --config infra/sst.config.ts
+   npx sst secret set KaguyaDiscordApplicationId <値> --config infra/sst.config.ts
    ```
 
    登録状況の確認:
 
    ```bash
-   npx sst secret list --stage local --config infra/sst.config.ts
+   npx sst secret list --config infra/sst.config.ts
    ```
 
-4. `npm run deploy:local` を実行する（browser runtime Layer の build は script 内で行われる）。
-5. 検証を終えて stage ごと破棄する場合は `npx sst remove --stage local --config infra/sst.config.ts` を実行する。
+4. `npm run dev` を実行する。
+5. personal stage のリソースごと破棄する場合は `npx sst remove --config infra/sst.config.ts` を実行する。

@@ -131,17 +131,20 @@ export default $config({
 			}).json,
 		});
 
-		// UMA ワンドロお題 scheduler job の Scheduler を作成。実行タイミングは config/job-schedules で一元管理する
-		new sst.aws.CronV2("UmaOneDrawTopicSchedulerSchedule", {
-			function: batchFunction,
-			...jobSchedules.umaOneDrawTopicScheduler,
-		});
+		// sst dev はローカルコードの検証用途のため、schedule 起動の Scheduler は作成しない
+		if (!$dev) {
+			// UMA ワンドロお題 scheduler job の Scheduler を作成。実行タイミングは config/job-schedules で一元管理する
+			new sst.aws.CronV2("UmaOneDrawTopicSchedulerSchedule", {
+				function: batchFunction,
+				...jobSchedules.umaOneDrawTopicScheduler,
+			});
 
-		// 遊技チェックリマインダーの Scheduler を作成。実行タイミングは config/job-schedules で一元管理する
-		new sst.aws.CronV2("PlayCheckReminderSchedule", {
-			function: batchFunction,
-			...jobSchedules.playCheckReminder,
-		});
+			// 遊技チェックリマインダーの Scheduler を作成。実行タイミングは config/job-schedules で一元管理する
+			new sst.aws.CronV2("PlayCheckReminderSchedule", {
+				function: batchFunction,
+				...jobSchedules.playCheckReminder,
+			});
+		}
 
 		// 公開エンドポイントは job ごとに増やさずこの Lambda 1 つに集約する。
 		const functionUrlFunction = new sst.aws.Function("FunctionUrlFunction", {
@@ -262,14 +265,16 @@ export default $config({
 		);
 
 		// アニメ分析 Orchestrator の Scheduler を作成。実行タイミングは config/job-schedules で一元管理する
-		new sst.aws.CronV2("AnimeAnalysisSchedule9", {
-			function: animeAnalysisOrchestratorFunction,
-			...jobSchedules.animeScrapingOrchestrator9,
-		});
-		new sst.aws.CronV2("AnimeAnalysisSchedule23", {
-			function: animeAnalysisOrchestratorFunction,
-			...jobSchedules.animeScrapingOrchestrator23,
-		});
+		if (!$dev) {
+			new sst.aws.CronV2("AnimeAnalysisSchedule9", {
+				function: animeAnalysisOrchestratorFunction,
+				...jobSchedules.animeScrapingOrchestrator9,
+			});
+			new sst.aws.CronV2("AnimeAnalysisSchedule23", {
+				function: animeAnalysisOrchestratorFunction,
+				...jobSchedules.animeScrapingOrchestrator23,
+			});
+		}
 
 		// SQS message ごとにアニメ分析スクレイピングを実行する Worker Lambda を作成
 		animeAnalysisQueue.subscribe(
