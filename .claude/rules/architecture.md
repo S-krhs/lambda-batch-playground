@@ -1,12 +1,9 @@
 # アーキテクチャ
 
-このドキュメントは、モノレポ全体の配置、package 境界、依存方向を定義します。
-アプリ固有の構成は `apps/<app>/docs/`、package 固有の構成は各 package の `docs/` を参照します。
+npm workspaces と Turbo で管理する、AWS Lambda バッチアプリ向けの TypeScript モノレポです。
+Lambda バッチアプリは `apps/` に置き、外部サービス連携は接続先ごとに `packages/integrations/<target>/` へ分離します。
 
 ## 全体像
-
-このリポジトリは npm workspaces と Turbo で管理する、AWS Lambda バッチアプリ向けの TypeScript モノレポです。
-Lambda バッチアプリは `apps/` に置き、外部サービス連携は接続先ごとに `packages/integrations/<target>/` へ分離します。
 
 ```text
 apps/
@@ -18,10 +15,12 @@ repositories/
 packages/
   integrations/
     discord/
+    scheduler/
     sqs/
   libs/
     browser/
     utils/
+scripts/
 docs/
 ```
 
@@ -34,6 +33,7 @@ docs/
 - `packages/integrations/*`: 外部サービス接続先ごとの integration package。
 - `packages/libs/utils`: 汎用処理 package。dayjs のような軽量な npm 依存は持てる。
 - `packages/libs/browser`: Playwright-core など browser 実行依存を持つ汎用処理 package。
+- `scripts/`: CI 補助スクリプト。workspace には含めない。
 
 将来的に複数 app で共有する業務関心が出た場合は、`packages/domain/` を追加できます。
 `packages/domain/` は複数 app で共有されるドメインモデル、ルール、ユースケース寄りの純粋処理を置く場所とし、特定 app の Lambda イベント、ルーティング、外部サービス client を持ちません。
@@ -62,18 +62,15 @@ apps/* -> repositories -> packages/libs/utils
 - feature 同士を組み合わせる必要がある場合は、`jobs/` など app の orchestration 層で行う。
 - 複数 feature で継続的に共有する純粋処理は `packages/libs/utils`、複数 app で共有する業務関心は将来の `packages/domain` へ移す。
 
-## Docs
-
-- `docs/`: モノレポ全体の方針、共通ルール、CI/CD。
-- `infra/`: SST app と AWS リソース定義。
-- `apps/<app>/docs/`: app 固有の入口、ジョブ、feature、運用。
-- `packages/integrations/<target>/docs/`: 接続先固有の integration 設計。
-- `packages/libs/docs/`: libs 配下 package の設計。
-
 ## Package 方針
 
 - integration は接続先ごとに package を分ける。重い通信ライブラリや認証 SDK が接続先ごとに増えるため。
-- libs は依存の重さで `packages/libs/utils` と `packages/libs/browser` に分ける。
-- `packages/libs/utils` は純粋処理を置く。dayjs のような軽量な npm 依存は持てるが、実行環境に影響する重い依存は持たない。
-- `packages/libs/browser` は Playwright-core など browser 実行に必要な依存を持つ処理を置く。
+- integration に置くもの: 接続先固有の型、HTTP 通信、認証、失敗応答のエラー変換。URL や token の解決、ジョブ判定、メッセージ生成、app 固有の型は置かない。
+- libs は依存の重さで `packages/libs/utils`(純粋処理。軽量な npm 依存のみ)と `packages/libs/browser`(browser 実行依存)に分ける。
 - app 固有の parser や domain 型は libs に置かず、app の `features/` または `shared/` に置く。
+
+## ドキュメント体系
+
+- `.claude/rules/`: 実装ルール。共通 rule は常時、workspace 別 rule は該当ファイルを扱うときに適用される。
+- `docs/`: 人間向けの運用マニュアル(CI/CD、手動セットアップ記録)。
+- 各 workspace の `README.md`: 利用者向けの公開 API・コマンド・secret の説明。
