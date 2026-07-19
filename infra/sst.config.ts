@@ -13,6 +13,17 @@ export default $config({
 		};
 	},
 	async run() {
+		// develop stage は CD(GitHub Actions)専用のため、ローカルからは read-only の diff だけを許可する
+		if (
+			$app.stage === "develop" &&
+			$cli.command !== "diff" &&
+			process.env.GITHUB_ACTIONS !== "true"
+		) {
+			throw new Error(
+				"develop stage への変更はローカルから実行できません。main への merge(CD)経由でデプロイしてください。",
+			);
+		}
+
 		const { jobSchedules } = await import("./config/job-schedules.js");
 		const { alarmDescriptions } = await import(
 			"./config/alarm-descriptions.js"

@@ -115,6 +115,8 @@ secret は stage ごとに `npx sst secret set` で設定します。
 npx sst diff --stage develop --config infra/sst.config.ts
 ```
 
+develop stage は CD 専用です。`sst.config.ts` のガードにより、ローカルから develop stage への `diff` 以外のコマンド（`deploy`・`remove`・`dev` など）はエラーになります。
+
 ### ローカル検証の初回セットアップ
 
 `npm run dev` は personal stage に SQS や secret などの実リソースを作成し、Lambda handler はローカルで実行します。schedule 起動の Scheduler（cron）は `sst dev` では作成されないため、セッション終了後にバッチが勝手に動くことはありません。初回のみ次のセットアップが必要です。
