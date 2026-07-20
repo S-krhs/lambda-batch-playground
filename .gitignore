@@ -8,6 +8,8 @@
 function.zip
 /.sst/
 **/.sst/
+# SST 生成の Resource 型宣言。commit する sst-resource-links.d.ts で代替するため追跡しない
+**/sst-env.d.ts
 /.turbo/
 /.tmp/
 **/.tmp/

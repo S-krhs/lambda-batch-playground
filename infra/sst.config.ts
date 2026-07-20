@@ -5,14 +5,31 @@ const appName = "eskra-aws-playground";
 
 export default $config({
 	// SST app の基本設定。デプロイ先は develop stage 固定。
-	app() {
+	app(input) {
 		return {
 			name: appName,
 			home: "aws",
 			removal: "remove",
+			// develop stage は CD 専用のため、ローカルからの誤った sst remove を CLI レベルで拒否する。
+			// run() のガードは run() を評価しない sst remove に効かないため、protect で別途塞ぐ
+			protect: input.stage === "develop",
 		};
 	},
 	async run() {
+		// develop stage は CD(GitHub Actions)専用のため、ローカルからは read-only の diff だけを許可する。
+		// GITHUB_ACTIONS を先に判定し、内部 API の $cli.command 参照を CD 経路から外す(&& の短絡評価)。
+		// このガードは run() を評価するコマンド(deploy・dev・diff・refresh)にのみ効く。
+		// run() を評価しない sst remove は app() の protect で別途拒否する
+		if (
+			$app.stage === "develop" &&
+			process.env.GITHUB_ACTIONS !== "true" &&
+			$cli.command !== "diff"
+		) {
+			throw new Error(
+				"develop stage への変更はローカルから実行できません。main への merge(CD)経由でデプロイしてください。",
+			);
+		}
+
 		const { jobSchedules } = await import("./config/job-schedules.js");
 		const { alarmDescriptions } = await import(
 			"./config/alarm-descriptions.js"
@@ -129,18 +146,6 @@ export default $config({
 					},
 				],
 			}).json,
-		});
-
-		// UMA ワンドロお題 scheduler job の Scheduler を作成。実行タイミングは config/job-schedules で一元管理する
-		new sst.aws.CronV2("UmaOneDrawTopicSchedulerSchedule", {
-			function: batchFunction,
-			...jobSchedules.umaOneDrawTopicScheduler,
-		});
-
-		// 遊技チェックリマインダーの Scheduler を作成。実行タイミングは config/job-schedules で一元管理する
-		new sst.aws.CronV2("PlayCheckReminderSchedule", {
-			function: batchFunction,
-			...jobSchedules.playCheckReminder,
 		});
 
 		// 公開エンドポイントは job ごとに増やさずこの Lambda 1 つに集約する。
@@ -261,15 +266,27 @@ export default $config({
 			},
 		);
 
-		// アニメ分析 Orchestrator の Scheduler を作成。実行タイミングは config/job-schedules で一元管理する
-		new sst.aws.CronV2("AnimeAnalysisSchedule9", {
-			function: animeAnalysisOrchestratorFunction,
-			...jobSchedules.animeScrapingOrchestrator9,
-		});
-		new sst.aws.CronV2("AnimeAnalysisSchedule23", {
-			function: animeAnalysisOrchestratorFunction,
-			...jobSchedules.animeScrapingOrchestrator23,
-		});
+		// schedule 起動の Scheduler(cron)は 1 つの !$dev ガードに集約し、追加時の入れ忘れを防ぐ。
+		// sst dev はローカルコード検証用途のため、dev セッション終了後に cron が発火し続けるのを防ぐ目的で $dev では作成しない。
+		// 実行タイミングは config/job-schedules で一元管理する
+		if (!$dev) {
+			new sst.aws.CronV2("UmaOneDrawTopicSchedulerSchedule", {
+				function: batchFunction,
+				...jobSchedules.umaOneDrawTopicScheduler,
+			});
+			new sst.aws.CronV2("PlayCheckReminderSchedule", {
+				function: batchFunction,
+				...jobSchedules.playCheckReminder,
+			});
+			new sst.aws.CronV2("AnimeAnalysisSchedule9", {
+				function: animeAnalysisOrchestratorFunction,
+				...jobSchedules.animeScrapingOrchestrator9,
+			});
+			new sst.aws.CronV2("AnimeAnalysisSchedule23", {
+				function: animeAnalysisOrchestratorFunction,
+				...jobSchedules.animeScrapingOrchestrator23,
+			});
+		}
 
 		// SQS message ごとにアニメ分析スクレイピングを実行する Worker Lambda を作成
 		animeAnalysisQueue.subscribe(

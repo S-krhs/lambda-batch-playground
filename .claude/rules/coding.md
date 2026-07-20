@@ -1,7 +1,6 @@
 # 実装ルール
 
-このドキュメントは、モノレポ全体で共通する実装ルールを定義します。
-配置と依存方向は `docs/architecture.md` を参照します。
+モノレポ全体で共通する実装ルールです。配置と依存方向は `.claude/rules/architecture.md` を参照します。
 
 ## 基本方針
 
@@ -38,18 +37,11 @@
 - app 固有の依存は、該当する `apps/<app>/package.json` に追加する。
 - repo 全体の開発ツールだけを root `package.json` に追加する。
 
-## 検証
-
-- 変更後は最低限 `npm run typecheck` を実行する。
-- import、フォーマット、未使用コードに触れた場合は `npm run lint` も実行する。
-- リリース前や複数ファイルを触った場合は `npm run validate` を実行する。
-- Webhook 実送信を伴う確認は、送信先と環境変数を明示してから行う。
-
 ## 変更時チェックリスト
 
-- 責務は `docs/architecture.md` の package 境界に収まっているか。
+- 責務は `.claude/rules/architecture.md` の package 境界に収まっているか。
 - 依存方向に逆流がないか。
 - feature 間 import が発生していないか。
 - export された API に JSDoc があるか。
-- package 固有のルールを `apps/<app>/docs/` または `packages/**/docs/` に追記したか。
+- workspace 固有のルールに影響する場合、該当する `.claude/rules/` の rule を更新したか。
 - `npm run validate` で確認したか。
