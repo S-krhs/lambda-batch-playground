@@ -1,6 +1,7 @@
 ---
 paths:
   - "apps/batch-playground/**"
+  - "repositories/playground/**"
 ---
 
 # Batch Playground

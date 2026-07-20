@@ -1,6 +1,7 @@
 ---
 paths:
   - "apps/batch-anime-analysis/**"
+  - "repositories/anime/**"
 ---
 
 # Batch Anime Analysis
@@ -41,6 +42,7 @@ jobs -> repositories/anime -> DB
 - 起動イベントは `unknown` として受け取り、job で使う直前に schema で検証・正規化する。repository 由来の入力は repository 境界で検証し、app 内では camelCase の型として扱う。
 - 各 Lambda のレスポンスは handler ごとの応答型(例: `OrchestratorResponse`)に合わせ、呼び出し元が機械的に扱える形にする。
 - スクレイピング対象の静的定義は `repositories/anime/data.ts` に置き、SQS イベントには定義本体を持たせない。
+- repository のスクレイピング定義から metric parser の入力指定への変換は `jobs/` で行う。feature は変換済みの入力を受け取り、repository 定義の形には依存しない。
 - metrics の永続化は repository API(`saveScrapingResult`)として呼び出す。保存は metric 取得後・Discord 通知前に行い、失敗した record は batchItemFailure として SQS の再試行に委譲する。
 - SQS は Standard Queue を使う。順序は要求せず、message の再試行と DLQ は AWS 側に委譲する。SQS message body の生成・検証は `src/shared/schemas/sqs/data-source/message.ts` に集約し、送信は `@eskra-aws-playground/integration-sqs` に委譲する。
 - SQS record ごとの実行制御と partial batch response は dataSource スクレイピング job が扱い、Worker handler は委譲だけを行う。

@@ -115,11 +115,20 @@ secret は stage ごとに `npx sst secret set` で設定します。
 npx sst diff --stage develop --config infra/sst.config.ts
 ```
 
-develop stage は CD 専用です。`sst.config.ts` のガードにより、ローカルから develop stage への `diff` 以外のコマンド（`deploy`・`remove`・`dev` など）はエラーになります。
+develop stage は CD 専用です。ローカルからの変更を 2 段で拒否します。
+
+- `run()` 冒頭のガード: `run()` を評価するコマンドのうち `diff` 以外（`deploy`・`dev`・`refresh`）をエラーにする。
+- `app()` の `protect`: `run()` を評価しない `sst remove --stage develop` を CLI レベルで拒否する。
+
+ただし `sst secret set` / `sst secret list` はどちらも経由しないため、`--stage develop` を付けるとローカルからでも通ってしまいます。develop の secret は CD（GitHub Secrets 経由）でのみ設定し、ローカルから develop stage の secret を操作しないでください。
 
 ### ローカル検証の初回セットアップ
 
-`npm run dev` は personal stage に SQS や secret などの実リソースを作成し、Lambda handler はローカルで実行します。schedule 起動の Scheduler（cron）は `sst dev` では作成されないため、セッション終了後にバッチが勝手に動くことはありません。初回のみ次のセットアップが必要です。
+`npm run dev` は personal stage に SQS や secret などの実リソースを作成し、Lambda handler はローカルで実行します。定期起動の Scheduler（cron）は `sst dev` では作成されないため、cron が自動発火することはありません。
+
+ただし one-time schedule の登録先（ScheduleGroup・IAM role・`scheduler:CreateSchedule` 権限）は `sst dev` でも作成されます。そのため `uma-one-draw-topic-scheduler` のように job 自身が one-time schedule を登録するジョブを手動起動すると、登録された schedule はセッション終了後の実時刻に発火し、スタブ Lambda を叩いて失敗（アラート通知）します。dev セッション後は `npx sst remove --config infra/sst.config.ts` で personal stage を破棄し、残った one-time schedule を消してください。
+
+初回のみ次のセットアップが必要です。
 
 1. SST がリソースを作成できる AWS credentials を用意する。
 2. DB migration を local 用 Neon branch へ適用する。root `.env` に local branch の direct 接続文字列を `DIRECT_DATABASE_URL` として置き、`npm run db:migrate` を実行する。
