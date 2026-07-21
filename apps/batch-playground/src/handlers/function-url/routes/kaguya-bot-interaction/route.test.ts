@@ -18,9 +18,25 @@ vi.mock("sst/resource", () => {
 	return {
 		Resource: {
 			KaguyaDiscordInteractionPublicKey: { value: "kaguya-public-key" },
+			PlaygroundInteractionQueue: { url: "https://sqs.test/interaction-queue" },
 		},
 	};
 });
+
+const sqs = vi.hoisted(() => {
+	return { sendMessages: vi.fn() };
+});
+
+vi.mock("@eskra-aws-playground/integration-sqs/sqs-message-sender.js", () => {
+	return {
+		SqsMessageSender: class {
+			sendMessages = sqs.sendMessages;
+		},
+	};
+});
+
+const applicationId = "888888888888888888";
+const token = "interaction-token";
 
 const buildEvent = (body: string): FunctionUrlEvent => {
 	return {
@@ -37,6 +53,7 @@ const buildEvent = (body: string): FunctionUrlEvent => {
 beforeEach(() => {
 	verifier.verifyInteractionSignature.mockReset();
 	verifier.verifyInteractionSignature.mockReturnValue(true);
+	sqs.sendMessages.mockReset();
 });
 
 describe("kaguyaBotInteractionRoute", () => {
@@ -53,30 +70,93 @@ describe("kaguyaBotInteractionRoute", () => {
 		expect(JSON.parse(response.body)).toEqual({ type: 1 });
 	});
 
-	it("/inuihiroshiには指定されたメッセージを返す", async () => {
+	it("/inuihiroshiは宣言ジョブをenqueueし公開deferredでACKする", async () => {
+		const response = await kaguyaBotInteractionRoute(
+			buildEvent(
+				JSON.stringify({
+					type: 2,
+					application_id: applicationId,
+					token,
+					data: { name: "inuihiroshi" },
+					user: { id: "123" },
+				}),
+			),
+		);
+
+		expect(sqs.sendMessages).toHaveBeenCalledWith([
+			{
+				id: "interaction-job",
+				body: {
+					job: "kaguya-inuihiroshi-reply",
+					applicationId,
+					token,
+				},
+			},
+		]);
+		expect(JSON.parse(response.body)).toEqual({ type: 5 });
+	});
+
+	it("未対応commandにはephemeralメッセージを返しenqueueしない", async () => {
+		const response = await kaguyaBotInteractionRoute(
+			buildEvent(
+				JSON.stringify({
+					type: 2,
+					application_id: applicationId,
+					token,
+					data: { name: "unknown" },
+					user: { id: "123" },
+				}),
+			),
+		);
+
+		expect(sqs.sendMessages).not.toHaveBeenCalled();
+		expect(JSON.parse(response.body)).toMatchObject({
+			type: 4,
+			data: { content: "この操作には対応していません。", flags: 64 },
+		});
+	});
+
+	it("callbackを取り出せないinteractionは即時ephemeralで返す", async () => {
 		const response = await kaguyaBotInteractionRoute(
 			buildEvent(
 				'{"type":2,"data":{"name":"inuihiroshi"},"user":{"id":"123"}}',
 			),
 		);
 
-		expect(JSON.parse(response.body)).toEqual({
+		expect(sqs.sendMessages).not.toHaveBeenCalled();
+		expect(JSON.parse(response.body)).toMatchObject({
 			type: 4,
 			data: {
-				content: "自由だ～～～～！！！！！！！",
-				allowed_mentions: { parse: [] },
+				content: "応答の準備に失敗しました。もう一度お試しください。",
+				flags: 64,
 			},
 		});
 	});
 
-	it("未対応commandにはephemeralメッセージを返す", async () => {
-		const response = await kaguyaBotInteractionRoute(
-			buildEvent('{"type":2,"data":{"name":"unknown"},"user":{"id":"123"}}'),
+	it("enqueueに失敗したらdeferredではなく再試行を促すephemeralを返す", async () => {
+		sqs.sendMessages.mockRejectedValue(
+			new Error("SQS message の送信に失敗しました: interaction-job"),
 		);
 
+		const response = await kaguyaBotInteractionRoute(
+			buildEvent(
+				JSON.stringify({
+					type: 2,
+					application_id: applicationId,
+					token,
+					data: { name: "inuihiroshi" },
+					user: { id: "123" },
+				}),
+			),
+		);
+
+		expect(response.statusCode).toBe(200);
 		expect(JSON.parse(response.body)).toMatchObject({
 			type: 4,
-			data: { flags: 64 },
+			data: {
+				content: "処理の受け付けに失敗しました。もう一度お試しください。",
+				flags: 64,
+			},
 		});
 	});
 

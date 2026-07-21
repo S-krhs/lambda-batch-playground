@@ -61,9 +61,23 @@ UMA ワンドロのお題を生成し、Discord Webhook へ通知します。
 
 - 対応しないパスは 404 を返します。
 - リクエストは Discord application の public key で Ed25519 署名を検証します（不正は 401）。
-- 対象ユーザーの押下: 元メッセージを選択結果の表示へ更新し、ボタンを取り除きます（type 7）。
-- 対象外ユーザーの押下: 本人にだけ見える ephemeral メッセージで対象外である旨を返します（type 4 + flags 64）。
 - Discord の Endpoint 検証（PING）には PONG を返します。
+
+### 応答の流れ（deferred + 後追いジョブ）
+
+Discord interaction は 3 秒以内に応答しないと失敗するため、Function URL Lambda では確定応答を作らず deferred で ACK し、実処理は SQS の後追いジョブへ渡します。DB 接続や Discord API 送信はすべて worker Lambda（`src/handlers/sqs-worker/handler.ts`）側で行い、worker が interaction token で元メッセージを確定内容へ差し替えます。
+
+| interaction | 即時応答 | 後追いジョブの結果 |
+| --- | --- | --- |
+| `/hello`, `/inuihiroshi` | deferred message（type 5・公開） | 元メッセージを固定文へ差し替え |
+| `/gamble-check-enable`, `/gamble-check-disable` | deferred message（type 5 + flags 64） | 設定を登録・削除し結果文へ差し替え |
+| 対象ユーザーのボタン押下 | deferred update（type 6） | 元メッセージを選択結果へ差し替えボタンを取り除く |
+| 対象外ユーザーのボタン押下 | ephemeral メッセージ（type 4 + flags 64） | なし（enqueue しない） |
+| サーバー外での gamble-check 実行 | ephemeral メッセージ（type 4 + flags 64） | なし（enqueue しない） |
+| PING・autocomplete | PONG（type 1）・空の候補一覧（type 8） | なし（deferred type が存在しないため即時確定） |
+
+- interaction token は発行から 15 分有効です。後追いジョブは message 単位で最大 3 回まで再試行し、使い切ると DLQ へ送られ CloudWatch alarm から Discord へ通知されます。
+- worker は Bot token を使いません。応答先は interaction が持つ `application_id` と `token` から解決します。
 
 ### Discord application のセットアップ
 

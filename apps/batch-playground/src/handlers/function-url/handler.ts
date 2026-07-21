@@ -1,6 +1,5 @@
 // In scope: Function URL の公開エンドポイントとして envelope を検証し、リクエストパスから担当 route へ委譲する
 // Out of scope: 署名検証、interaction 内容の解釈、応答 payload の中身を持つ
-import { warmupDatabaseConnection } from "@eskra-aws-playground/repositories/playground/shared/db/db-warmup.js";
 import { paths } from "./contracts/paths.js";
 import { kaguyaBotInteractionRoute } from "./routes/kaguya-bot-interaction/route.js";
 import { yacchoBotInteractionRoute } from "./routes/yaccho-bot-interaction/route.js";
@@ -9,17 +8,6 @@ import {
 	type FunctionUrlResponse,
 	functionUrlEventSchema,
 } from "./schema.js";
-
-// CPU ブーストが効く init フェーズで DB 接続を確立し、Discord interaction の 3 秒制限に収める。
-const warmupTimeoutMs = 3000;
-await Promise.race([
-	warmupDatabaseConnection().catch((error) => {
-		console.warn("DB 接続の warmup に失敗しました。", error);
-	}),
-	new Promise<void>((resolve) => {
-		setTimeout(resolve, warmupTimeoutMs).unref();
-	}),
-]);
 
 /** Function URL のリクエストを受け取り HTTP response を返す route。 */
 type FunctionUrlRoute = (

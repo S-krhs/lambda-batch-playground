@@ -1,18 +1,35 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { DiscordApplicationCommandInteraction } from "@/external-protocols/discord-message/parse.js";
+import type {
+	DiscordApplicationCommandInteraction,
+	DiscordInteractionCallback,
+} from "@/external-protocols/discord-message/parse.js";
 import { gambleCheckDisableOperation } from "./gamble-check-disable-operation.js";
 
-const channelSettingRepository = vi.hoisted(() => {
-	return { deleteByGuildIdAndUserId: vi.fn() };
+const sqs = vi.hoisted(() => {
+	return { sendMessages: vi.fn() };
 });
 
-vi.mock(
-	"@eskra-aws-playground/repositories/playground/channel-setting/repository.js",
-	() => {
-		return { channelSettingRepository };
-	},
-);
+vi.mock("@eskra-aws-playground/integration-sqs/sqs-message-sender.js", () => {
+	return {
+		SqsMessageSender: class {
+			sendMessages = sqs.sendMessages;
+		},
+	};
+});
+
+vi.mock("sst/resource", () => {
+	return {
+		Resource: {
+			PlaygroundInteractionQueue: { url: "https://sqs.test/interaction-queue" },
+		},
+	};
+});
+
+const callback: DiscordInteractionCallback = {
+	applicationId: "999",
+	token: "tok",
+};
 
 const guildCommand = (userId = "333"): DiscordApplicationCommandInteraction => {
 	return {
@@ -24,51 +41,53 @@ const guildCommand = (userId = "333"): DiscordApplicationCommandInteraction => {
 };
 
 beforeEach(() => {
-	channelSettingRepository.deleteByGuildIdAndUserId.mockReset();
+	sqs.sendMessages.mockReset();
 });
 
 describe("gambleCheckDisableOperation", () => {
-	it("実行者本人の設定だけを削除する", async () => {
-		channelSettingRepository.deleteByGuildIdAndUserId.mockResolvedValue({
-			guildId: "111",
-			channelId: "222",
-			userId: "333",
-		});
+	it("実行者本人の削除ジョブを enqueue し ephemeral deferred で ACK する", async () => {
+		const result = await gambleCheckDisableOperation(guildCommand(), callback);
 
-		const result = await gambleCheckDisableOperation(guildCommand());
-
-		expect(
-			channelSettingRepository.deleteByGuildIdAndUserId,
-		).toHaveBeenCalledWith({
-			applicationKey: "yaccho-bot",
-			settingKey: "play-check-reminder",
-			guildId: "111",
-			userId: "333",
+		expect(sqs.sendMessages).toHaveBeenCalledWith([
+			{
+				id: "interaction-job",
+				body: {
+					job: "gamble-check-disable",
+					applicationId: "999",
+					token: "tok",
+					guildId: "111",
+					userId: "333",
+				},
+			},
+		]);
+		expect(result).toEqual({
+			kind: "OK",
+			data: { type: 5, data: { flags: 64 } },
 		});
-		expect(result.data.data.content).toBe("りょ～！またね～");
 	});
 
-	it("設定が無ければその旨を返す", async () => {
-		channelSettingRepository.deleteByGuildIdAndUserId.mockResolvedValue(null);
-
-		const result = await gambleCheckDisableOperation(guildCommand());
-
-		expect(result.data.data.content).toBe(
-			"よよよ……リマインダーはまだ設定されていないのです～",
+	it("サーバー外からの実行は enqueue せず即時 ephemeral を返す", async () => {
+		const result = await gambleCheckDisableOperation(
+			{
+				kind: "application-command",
+				userId: "333",
+				command: { name: "gamble-check-disable", options: [] },
+				context: { kind: "direct-message" },
+			},
+			callback,
 		);
-	});
 
-	it("サーバー外からの実行は設定を変更しない", async () => {
-		const result = await gambleCheckDisableOperation({
-			kind: "application-command",
-			userId: "333",
-			command: { name: "gamble-check-disable", options: [] },
-			context: { kind: "direct-message" },
+		expect(sqs.sendMessages).not.toHaveBeenCalled();
+		expect(result).toEqual({
+			kind: "OK",
+			data: {
+				type: 4,
+				data: {
+					content: "サーバー内のチャンネルで使ってね～",
+					flags: 64,
+					allowed_mentions: { parse: [] },
+				},
+			},
 		});
-
-		expect(
-			channelSettingRepository.deleteByGuildIdAndUserId,
-		).not.toHaveBeenCalled();
-		expect(result.data.data.content).toBe("サーバー内のチャンネルで使ってね～");
 	});
 });

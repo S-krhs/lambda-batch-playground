@@ -15,6 +15,10 @@
 		"./discord-command-client.js": {
 			"types": "./dist/discord-command-client.d.ts",
 			"default": "./dist/discord-command-client.js"
+		},
+		"./discord-interaction-client.js": {
+			"types": "./dist/discord-interaction-client.d.ts",
+			"default": "./dist/discord-interaction-client.js"
 		}
 	},
 	"dependencies": {

@@ -1,17 +1,51 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import type { DiscordInteractionCallback } from "@/external-protocols/discord-message/parse.js";
 import { inuihiroshiCommandOperation } from "./inuihiroshi-command-operation.js";
 
+const sqs = vi.hoisted(() => {
+	return { sendMessages: vi.fn() };
+});
+
+vi.mock("@eskra-aws-playground/integration-sqs/sqs-message-sender.js", () => {
+	return {
+		SqsMessageSender: class {
+			sendMessages = sqs.sendMessages;
+		},
+	};
+});
+
+vi.mock("sst/resource", () => {
+	return {
+		Resource: {
+			PlaygroundInteractionQueue: { url: "https://sqs.test/interaction-queue" },
+		},
+	};
+});
+
+const callback: DiscordInteractionCallback = {
+	applicationId: "999",
+	token: "tok",
+};
+
+beforeEach(() => {
+	sqs.sendMessages.mockReset();
+});
+
 describe("inuihiroshiCommandOperation", () => {
-	it("自由を宣言するメッセージ payload を返す", () => {
-		expect(inuihiroshiCommandOperation()).toEqual({
-			kind: "OK",
-			data: {
-				type: 4,
-				data: {
-					content: "自由だ～～～～！！！！！！！",
-					allowed_mentions: { parse: [] },
+	it("宣言ジョブを enqueue し公開 deferred で ACK する", async () => {
+		const result = await inuihiroshiCommandOperation(callback);
+
+		expect(sqs.sendMessages).toHaveBeenCalledWith([
+			{
+				id: "interaction-job",
+				body: {
+					job: "kaguya-inuihiroshi-reply",
+					applicationId: "999",
+					token: "tok",
 				},
 			},
-		});
+		]);
+		expect(result).toEqual({ kind: "OK", data: { type: 5 } });
 	});
 });

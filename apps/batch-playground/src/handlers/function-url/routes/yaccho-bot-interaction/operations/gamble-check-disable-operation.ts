@@ -1,32 +1,50 @@
-// In scope: gamble-check-disable command の実行場所確認、本人設定の削除、callback payload 生成
-// Out of scope: command routing、DB query、HTTP response の形成
-import { channelSettingRepository } from "@eskra-aws-playground/repositories/playground/channel-setting/repository.js";
-import { applicationKeys } from "@eskra-aws-playground/repositories/playground/shared/literals/application-key.js";
-import { settingKeys } from "@eskra-aws-playground/repositories/playground/shared/literals/setting-key.js";
-
-import type { DiscordEphemeralResponsePayload } from "@/external-protocols/discord-message/interaction-response.js";
-import type { DiscordApplicationCommandInteraction } from "@/external-protocols/discord-message/parse.js";
+// In scope: gamble-check-disable の実行場所を確認し、deferred 応答で ACK して削除ジョブを enqueue する
+// Out of scope: command routing、DB query、HTTP response の形成、確定メッセージの生成
+import { SqsMessageSender } from "@eskra-aws-playground/integration-sqs/sqs-message-sender.js";
+import { Resource } from "sst/resource";
+import {
+	type DiscordDeferredMessageResponsePayload,
+	type DiscordEphemeralResponsePayload,
+	messageFlags,
+	responseTypes,
+} from "@/external-protocols/discord-message/interaction-response.js";
+import type {
+	DiscordApplicationCommandInteraction,
+	DiscordInteractionCallback,
+} from "@/external-protocols/discord-message/parse.js";
 import type { OperationResult } from "@/handlers/function-url/routes/intermediate-models/operation-result.js";
+import { interactionJobNames } from "@/shared/contracts/interaction-job-names.js";
+import type { InteractionJobMessage } from "@/shared/schemas/sqs/interaction-job/message.js";
 import { ephemeralOperation } from "./ephemeral-operation.js";
 
-/** gamble-check-disable command を解決し、実行者本人のリマインダー設定だけを削除する。 */
+/** gamble-check-disable の実行場所を確認し、ephemeral な deferred 応答で ACK して削除ジョブを enqueue する。 */
 export const gambleCheckDisableOperation = async (
 	interaction: DiscordApplicationCommandInteraction,
-): Promise<OperationResult<DiscordEphemeralResponsePayload>> => {
+	callback: DiscordInteractionCallback,
+): Promise<
+	OperationResult<
+		DiscordEphemeralResponsePayload | DiscordDeferredMessageResponsePayload
+	>
+> => {
 	if (interaction.context.kind !== "guild") {
 		return ephemeralOperation("サーバー内のチャンネルで使ってね～");
 	}
 
-	const deletedSetting =
-		await channelSettingRepository.deleteByGuildIdAndUserId({
-			applicationKey: applicationKeys.yacchoBot,
-			settingKey: settingKeys.playCheckReminder,
-			guildId: interaction.context.guildId,
-			userId: interaction.userId,
-		});
-	return ephemeralOperation(
-		deletedSetting
-			? "りょ～！またね～"
-			: "よよよ……リマインダーはまだ設定されていないのです～",
-	);
+	const message: InteractionJobMessage = {
+		job: interactionJobNames.gambleCheckDisable,
+		applicationId: callback.applicationId,
+		token: callback.token,
+		guildId: interaction.context.guildId,
+		userId: interaction.userId,
+	};
+	const sender = new SqsMessageSender(Resource.PlaygroundInteractionQueue.url);
+	await sender.sendMessages([{ id: "interaction-job", body: message }]);
+
+	return {
+		kind: "OK",
+		data: {
+			type: responseTypes.deferredMessage,
+			data: { flags: messageFlags.ephemeral },
+		},
+	};
 };

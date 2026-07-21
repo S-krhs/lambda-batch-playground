@@ -24,23 +24,27 @@ vi.mock("sst/resource", () => {
 	return {
 		Resource: {
 			YacchoDiscordInteractionPublicKey: { value: "test-public-key" },
+			PlaygroundInteractionQueue: { url: "https://sqs.test/interaction-queue" },
 		},
 	};
 });
 
-const channelSettingRepository = vi.hoisted(() => {
-	return { save: vi.fn(), deleteByGuildIdAndUserId: vi.fn() };
+const sqs = vi.hoisted(() => {
+	return { sendMessages: vi.fn() };
 });
 
-vi.mock(
-	"@eskra-aws-playground/repositories/playground/channel-setting/repository.js",
-	() => {
-		return { channelSettingRepository };
-	},
-);
+vi.mock("@eskra-aws-playground/integration-sqs/sqs-message-sender.js", () => {
+	return {
+		SqsMessageSender: class {
+			sendMessages = sqs.sendMessages;
+		},
+	};
+});
 
 const timestamp = "1720000000";
 const signature = "test-signature";
+const applicationId = "888888888888888888";
+const token = "interaction-token";
 const targetUserId = "111111111111111111";
 const otherUserId = "222222222222222222";
 
@@ -67,8 +71,23 @@ const buildComponentInteractionBody = (
 ): string => {
 	return JSON.stringify({
 		type: 3,
+		application_id: applicationId,
+		token,
 		data: { custom_id: customId },
 		member: { user: { id: pressedUserId } },
+	});
+};
+
+const buildCommandInteractionBody = (
+	name: string,
+	extra: Record<string, unknown>,
+): string => {
+	return JSON.stringify({
+		type: 2,
+		application_id: applicationId,
+		token,
+		data: { name },
+		...extra,
 	});
 };
 
@@ -92,8 +111,7 @@ const okBody = (
 beforeEach(() => {
 	verifier.verifyInteractionSignature.mockReset();
 	verifier.verifyInteractionSignature.mockReturnValue(true);
-	channelSettingRepository.save.mockReset();
-	channelSettingRepository.deleteByGuildIdAndUserId.mockReset();
+	sqs.sendMessages.mockReset();
 });
 
 describe("yacchoBotInteractionRoute", () => {
@@ -127,7 +145,7 @@ describe("yacchoBotInteractionRoute", () => {
 		});
 	});
 
-	it("対象ユーザーのボタン押下は元メッセージを選択結果へ更新しボタンを取り除く", async () => {
+	it("対象ユーザーのボタン押下は結果反映ジョブを enqueue し deferred update で ACK する", async () => {
 		const rawBody = buildComponentInteractionBody(
 			`play-check-reminder:${targetUserId}:won`,
 			targetUserId,
@@ -135,14 +153,21 @@ describe("yacchoBotInteractionRoute", () => {
 
 		const body = okBody(await yacchoBotInteractionRoute(buildEvent(rawBody)));
 
-		expect(body.type).toBe(7);
-		expect(body.data?.components).toEqual([]);
-		expect(body.data?.content).toBe(
-			"∈₍ ᐢ._.ᐢ₎ < やるじゃねぇか まぐれに頼る天才だな",
-		);
+		expect(sqs.sendMessages).toHaveBeenCalledWith([
+			{
+				id: "interaction-job",
+				body: {
+					job: "play-check-reminder-choice",
+					applicationId,
+					token,
+					action: "won",
+				},
+			},
+		]);
+		expect(body.type).toBe(6);
 	});
 
-	it("対象外ユーザーのボタン押下は本人にだけ見える専用メッセージを返す", async () => {
+	it("対象外ユーザーのボタン押下は enqueue せず本人にだけ見える専用メッセージを返す", async () => {
 		const rawBody = buildComponentInteractionBody(
 			`play-check-reminder:${targetUserId}:won`,
 			otherUserId,
@@ -150,6 +175,7 @@ describe("yacchoBotInteractionRoute", () => {
 
 		const body = okBody(await yacchoBotInteractionRoute(buildEvent(rawBody)));
 
+		expect(sqs.sendMessages).not.toHaveBeenCalled();
 		expect(body.type).toBe(4);
 		expect(body.data?.flags).toBe(64);
 		expect(body.data?.content).toContain(`<@${targetUserId}>`);
@@ -163,6 +189,7 @@ describe("yacchoBotInteractionRoute", () => {
 
 		const body = okBody(await yacchoBotInteractionRoute(buildEvent(rawBody)));
 
+		expect(sqs.sendMessages).not.toHaveBeenCalled();
 		expect(body.type).toBe(4);
 		expect(body.data?.flags).toBe(64);
 		expect(body.data?.content).toBe("自分で調べろｶｽ");
@@ -192,24 +219,29 @@ describe("yacchoBotInteractionRoute", () => {
 		expect(body.data?.flags).toBe(64);
 	});
 
-	it("/hello コマンドには挨拶メッセージを返す", async () => {
-		const rawBody = JSON.stringify({
-			type: 2,
-			data: { name: "hello" },
+	it("/hello コマンドはあいさつジョブを enqueue し公開 deferred で ACK する", async () => {
+		const rawBody = buildCommandInteractionBody("hello", {
 			user: { id: targetUserId },
 		});
 
 		const body = okBody(await yacchoBotInteractionRoute(buildEvent(rawBody)));
 
-		expect(body.type).toBe(4);
-		expect(body.data?.content).toBe("やおよろ～🌚");
+		expect(sqs.sendMessages).toHaveBeenCalledWith([
+			{
+				id: "interaction-job",
+				body: {
+					job: "yaccho-hello-reply",
+					applicationId,
+					token,
+				},
+			},
+		]);
+		expect(body.type).toBe(5);
 		expect(body.data?.flags).toBeUndefined();
 	});
 
-	it("gamble-check-enable はサーバー内チャンネルで本人設定を登録する", async () => {
-		const rawBody = JSON.stringify({
-			type: 2,
-			data: { name: "gamble-check-enable" },
+	it("gamble-check-enable はサーバー内チャンネルで登録ジョブを enqueue する", async () => {
+		const rawBody = buildCommandInteractionBody("gamble-check-enable", {
 			guild_id: "555555555555555555",
 			channel_id: "666666666666666666",
 			member: { user: { id: targetUserId } },
@@ -217,54 +249,72 @@ describe("yacchoBotInteractionRoute", () => {
 
 		const body = okBody(await yacchoBotInteractionRoute(buildEvent(rawBody)));
 
-		expect(channelSettingRepository.save).toHaveBeenCalledWith({
-			applicationKey: "yaccho-bot",
-			settingKey: "play-check-reminder",
-			guildId: "555555555555555555",
-			channelId: "666666666666666666",
-			userId: targetUserId,
-		});
-		expect(body.type).toBe(4);
+		expect(sqs.sendMessages).toHaveBeenCalledWith([
+			{
+				id: "interaction-job",
+				body: {
+					job: "gamble-check-enable",
+					applicationId,
+					token,
+					guildId: "555555555555555555",
+					channelId: "666666666666666666",
+					userId: targetUserId,
+				},
+			},
+		]);
+		expect(body.type).toBe(5);
 		expect(body.data?.flags).toBe(64);
-		expect(body.data?.content).toBe("うけたまかしこまつかまつり〜");
 	});
 
-	it("gamble-check-disable は本人設定だけを削除する", async () => {
-		channelSettingRepository.deleteByGuildIdAndUserId.mockResolvedValue({
-			guildId: "555555555555555555",
-			channelId: "666666666666666666",
-			userId: targetUserId,
-		});
-		const rawBody = JSON.stringify({
-			type: 2,
-			data: { name: "gamble-check-disable" },
+	it("gamble-check-disable は削除ジョブを enqueue する", async () => {
+		const rawBody = buildCommandInteractionBody("gamble-check-disable", {
 			guild_id: "555555555555555555",
 			member: { user: { id: targetUserId } },
 		});
 
 		const body = okBody(await yacchoBotInteractionRoute(buildEvent(rawBody)));
 
-		expect(
-			channelSettingRepository.deleteByGuildIdAndUserId,
-		).toHaveBeenCalledWith({
-			applicationKey: "yaccho-bot",
-			settingKey: "play-check-reminder",
-			guildId: "555555555555555555",
-			userId: targetUserId,
-		});
-		expect(body.type).toBe(4);
-		expect(body.data?.content).toBe("りょ～！またね～");
+		expect(sqs.sendMessages).toHaveBeenCalledWith([
+			{
+				id: "interaction-job",
+				body: {
+					job: "gamble-check-disable",
+					applicationId,
+					token,
+					guildId: "555555555555555555",
+					userId: targetUserId,
+				},
+			},
+		]);
+		expect(body.type).toBe(5);
+		expect(body.data?.flags).toBe(64);
 	});
 
-	it("未対応のコマンドは対応外の ephemeral メッセージを返す", async () => {
-		const rawBody = JSON.stringify({
-			type: 2,
-			data: { name: "unknown" },
+	it("enqueue に失敗したら deferred ではなく再試行を促す ephemeral を返す", async () => {
+		sqs.sendMessages.mockRejectedValue(
+			new Error("SQS message の送信に失敗しました: interaction-job"),
+		);
+		const rawBody = buildCommandInteractionBody("hello", {
 			user: { id: targetUserId },
 		});
 
 		const body = okBody(await yacchoBotInteractionRoute(buildEvent(rawBody)));
 
+		expect(body.type).toBe(4);
+		expect(body.data?.flags).toBe(64);
+		expect(body.data?.content).toBe(
+			"処理の受け付けに失敗しました。もう一度お試しください。",
+		);
+	});
+
+	it("未対応のコマンドは対応外の ephemeral メッセージを返す", async () => {
+		const rawBody = buildCommandInteractionBody("unknown", {
+			user: { id: targetUserId },
+		});
+
+		const body = okBody(await yacchoBotInteractionRoute(buildEvent(rawBody)));
+
+		expect(sqs.sendMessages).not.toHaveBeenCalled();
 		expect(body.type).toBe(4);
 		expect(body.data?.flags).toBe(64);
 	});
