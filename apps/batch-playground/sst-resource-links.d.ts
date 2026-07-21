@@ -11,5 +11,6 @@ declare module "sst/resource" {
 		KaguyaDiscordBotToken: { value: string };
 		KaguyaDiscordInteractionPublicKey: { value: string };
 		KaguyaDiscordApplicationId: { value: string };
+		PlaygroundInteractionQueue: { url: string };
 	}
 }
