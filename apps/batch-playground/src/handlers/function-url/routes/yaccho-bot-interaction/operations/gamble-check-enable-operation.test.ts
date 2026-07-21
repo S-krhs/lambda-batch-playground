@@ -6,12 +6,24 @@ import type {
 } from "@/external-protocols/discord-message/parse.js";
 import { gambleCheckEnableOperation } from "./gamble-check-enable-operation.js";
 
-const enqueue = vi.hoisted(() => {
-	return { enqueueInteractionJob: vi.fn() };
+const sqs = vi.hoisted(() => {
+	return { sendMessages: vi.fn() };
 });
 
-vi.mock("@/handlers/function-url/interaction-job/enqueue.js", () => {
-	return { enqueueInteractionJob: enqueue.enqueueInteractionJob };
+vi.mock("@eskra-aws-playground/integration-sqs/sqs-message-sender.js", () => {
+	return {
+		SqsMessageSender: class {
+			sendMessages = sqs.sendMessages;
+		},
+	};
+});
+
+vi.mock("sst/resource", () => {
+	return {
+		Resource: {
+			PlaygroundInteractionQueue: { url: "https://sqs.test/interaction-queue" },
+		},
+	};
 });
 
 const callback: DiscordInteractionCallback = {
@@ -29,21 +41,26 @@ const guildCommand = (userId = "333"): DiscordApplicationCommandInteraction => {
 };
 
 beforeEach(() => {
-	enqueue.enqueueInteractionJob.mockReset();
+	sqs.sendMessages.mockReset();
 });
 
 describe("gambleCheckEnableOperation", () => {
 	it("現在の Guild・channel と実行者本人で登録ジョブを enqueue し ephemeral deferred で ACK する", async () => {
 		const result = await gambleCheckEnableOperation(guildCommand(), callback);
 
-		expect(enqueue.enqueueInteractionJob).toHaveBeenCalledWith({
-			job: "gamble-check-enable",
-			applicationId: "999",
-			token: "tok",
-			guildId: "111",
-			channelId: "222",
-			userId: "333",
-		});
+		expect(sqs.sendMessages).toHaveBeenCalledWith([
+			{
+				id: "interaction-job",
+				body: {
+					job: "gamble-check-enable",
+					applicationId: "999",
+					token: "tok",
+					guildId: "111",
+					channelId: "222",
+					userId: "333",
+				},
+			},
+		]);
 		expect(result).toEqual({
 			kind: "OK",
 			data: { type: 5, data: { flags: 64 } },
@@ -61,7 +78,7 @@ describe("gambleCheckEnableOperation", () => {
 			callback,
 		);
 
-		expect(enqueue.enqueueInteractionJob).not.toHaveBeenCalled();
+		expect(sqs.sendMessages).not.toHaveBeenCalled();
 		expect(result).toEqual({
 			kind: "OK",
 			data: {

@@ -1,5 +1,7 @@
 // In scope: 遊技リマインダーのボタン押下を検証し、deferred update で ACK して結果反映ジョブを enqueue する
 // Out of scope: interaction 種別・コマンドのルーティング、確定メッセージの生成、HTTP response の形成
+import { SqsMessageSender } from "@eskra-aws-playground/integration-sqs/sqs-message-sender.js";
+import { Resource } from "sst/resource";
 import {
 	type DiscordDeferredUpdateResponsePayload,
 	type DiscordEphemeralResponsePayload,
@@ -11,8 +13,8 @@ import type {
 	DiscordInteractionCallback,
 } from "@/external-protocols/discord-message/parse.js";
 import { interactionJobNames } from "@/features/interaction-job/job-names.js";
+import type { InteractionJobMessage } from "@/features/interaction-job/queue-message.js";
 import { REMINDER_CHOICES } from "@/features/play-check-reminder/reminder-settings.js";
-import { enqueueInteractionJob } from "@/handlers/function-url/interaction-job/enqueue.js";
 import type { OperationResult } from "@/handlers/function-url/routes/intermediate-models/operation-result.js";
 import { prefixes } from "../contracts/prefixes.js";
 
@@ -66,12 +68,14 @@ export const playCheckReminderOperation = async (
 		};
 	}
 
-	await enqueueInteractionJob({
+	const message: InteractionJobMessage = {
 		job: interactionJobNames.playCheckReminderChoice,
 		applicationId: callback.applicationId,
 		token: callback.token,
 		action,
-	});
+	};
+	const sender = new SqsMessageSender(Resource.PlaygroundInteractionQueue.url);
+	await sender.sendMessages([{ id: "interaction-job", body: message }]);
 
 	return { kind: "OK", data: { type: responseTypes.deferredUpdate } };
 };

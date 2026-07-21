@@ -24,16 +24,21 @@ vi.mock("sst/resource", () => {
 	return {
 		Resource: {
 			YacchoDiscordInteractionPublicKey: { value: "test-public-key" },
+			PlaygroundInteractionQueue: { url: "https://sqs.test/interaction-queue" },
 		},
 	};
 });
 
-const enqueue = vi.hoisted(() => {
-	return { enqueueInteractionJob: vi.fn() };
+const sqs = vi.hoisted(() => {
+	return { sendMessages: vi.fn() };
 });
 
-vi.mock("@/handlers/function-url/interaction-job/enqueue.js", () => {
-	return { enqueueInteractionJob: enqueue.enqueueInteractionJob };
+vi.mock("@eskra-aws-playground/integration-sqs/sqs-message-sender.js", () => {
+	return {
+		SqsMessageSender: class {
+			sendMessages = sqs.sendMessages;
+		},
+	};
 });
 
 const timestamp = "1720000000";
@@ -106,7 +111,7 @@ const okBody = (
 beforeEach(() => {
 	verifier.verifyInteractionSignature.mockReset();
 	verifier.verifyInteractionSignature.mockReturnValue(true);
-	enqueue.enqueueInteractionJob.mockReset();
+	sqs.sendMessages.mockReset();
 });
 
 describe("yacchoBotInteractionRoute", () => {
@@ -148,12 +153,17 @@ describe("yacchoBotInteractionRoute", () => {
 
 		const body = okBody(await yacchoBotInteractionRoute(buildEvent(rawBody)));
 
-		expect(enqueue.enqueueInteractionJob).toHaveBeenCalledWith({
-			job: "play-check-reminder-choice",
-			applicationId,
-			token,
-			action: "won",
-		});
+		expect(sqs.sendMessages).toHaveBeenCalledWith([
+			{
+				id: "interaction-job",
+				body: {
+					job: "play-check-reminder-choice",
+					applicationId,
+					token,
+					action: "won",
+				},
+			},
+		]);
 		expect(body.type).toBe(6);
 	});
 
@@ -165,7 +175,7 @@ describe("yacchoBotInteractionRoute", () => {
 
 		const body = okBody(await yacchoBotInteractionRoute(buildEvent(rawBody)));
 
-		expect(enqueue.enqueueInteractionJob).not.toHaveBeenCalled();
+		expect(sqs.sendMessages).not.toHaveBeenCalled();
 		expect(body.type).toBe(4);
 		expect(body.data?.flags).toBe(64);
 		expect(body.data?.content).toContain(`<@${targetUserId}>`);
@@ -179,7 +189,7 @@ describe("yacchoBotInteractionRoute", () => {
 
 		const body = okBody(await yacchoBotInteractionRoute(buildEvent(rawBody)));
 
-		expect(enqueue.enqueueInteractionJob).not.toHaveBeenCalled();
+		expect(sqs.sendMessages).not.toHaveBeenCalled();
 		expect(body.type).toBe(4);
 		expect(body.data?.flags).toBe(64);
 		expect(body.data?.content).toBe("自分で調べろｶｽ");
@@ -216,11 +226,16 @@ describe("yacchoBotInteractionRoute", () => {
 
 		const body = okBody(await yacchoBotInteractionRoute(buildEvent(rawBody)));
 
-		expect(enqueue.enqueueInteractionJob).toHaveBeenCalledWith({
-			job: "yaccho-hello-reply",
-			applicationId,
-			token,
-		});
+		expect(sqs.sendMessages).toHaveBeenCalledWith([
+			{
+				id: "interaction-job",
+				body: {
+					job: "yaccho-hello-reply",
+					applicationId,
+					token,
+				},
+			},
+		]);
 		expect(body.type).toBe(5);
 		expect(body.data?.flags).toBeUndefined();
 	});
@@ -234,14 +249,19 @@ describe("yacchoBotInteractionRoute", () => {
 
 		const body = okBody(await yacchoBotInteractionRoute(buildEvent(rawBody)));
 
-		expect(enqueue.enqueueInteractionJob).toHaveBeenCalledWith({
-			job: "gamble-check-enable",
-			applicationId,
-			token,
-			guildId: "555555555555555555",
-			channelId: "666666666666666666",
-			userId: targetUserId,
-		});
+		expect(sqs.sendMessages).toHaveBeenCalledWith([
+			{
+				id: "interaction-job",
+				body: {
+					job: "gamble-check-enable",
+					applicationId,
+					token,
+					guildId: "555555555555555555",
+					channelId: "666666666666666666",
+					userId: targetUserId,
+				},
+			},
+		]);
 		expect(body.type).toBe(5);
 		expect(body.data?.flags).toBe(64);
 	});
@@ -254,13 +274,18 @@ describe("yacchoBotInteractionRoute", () => {
 
 		const body = okBody(await yacchoBotInteractionRoute(buildEvent(rawBody)));
 
-		expect(enqueue.enqueueInteractionJob).toHaveBeenCalledWith({
-			job: "gamble-check-disable",
-			applicationId,
-			token,
-			guildId: "555555555555555555",
-			userId: targetUserId,
-		});
+		expect(sqs.sendMessages).toHaveBeenCalledWith([
+			{
+				id: "interaction-job",
+				body: {
+					job: "gamble-check-disable",
+					applicationId,
+					token,
+					guildId: "555555555555555555",
+					userId: targetUserId,
+				},
+			},
+		]);
 		expect(body.type).toBe(5);
 		expect(body.data?.flags).toBe(64);
 	});
@@ -272,7 +297,7 @@ describe("yacchoBotInteractionRoute", () => {
 
 		const body = okBody(await yacchoBotInteractionRoute(buildEvent(rawBody)));
 
-		expect(enqueue.enqueueInteractionJob).not.toHaveBeenCalled();
+		expect(sqs.sendMessages).not.toHaveBeenCalled();
 		expect(body.type).toBe(4);
 		expect(body.data?.flags).toBe(64);
 	});

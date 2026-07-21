@@ -27,8 +27,7 @@ Discord interaction は 3 秒以内に応答しないと失敗するため、`fu
 | `src/handlers/batch/jobs/` | batch job 固有のイベント詳細 parse、feature・repository・integration 呼び出し、共通レスポンス作成 | envelope 検証、job の振り分け、外部 API 詳細 |
 | `src/handlers/function-url/contracts/paths.ts` | function-url が公開する path の一元管理 | route の実装 |
 | `src/handlers/function-url/routes/<route>/route.ts` | request envelope の parse、認証・認可、interaction type から operation への振り分け、HTTP response の形成 | Discord interaction body の parse・payload 構築、feature の直接呼び出し、type 固有のオーケストレーション |
-| `src/handlers/function-url/routes/<route>/operations/` | interaction type 固有のオーケストレーション、feature・repository 呼び出し、後追いジョブの enqueue と deferred ack の生成 | route の選択、署名検証、HTTP response の形成、別 operation の呼び出し、確定メッセージの生成 |
-| `src/handlers/function-url/interaction-job/` | 後追いジョブ message の SQS 送信と queue URL の link 解決 | message の組み立て、ジョブの実行内容 |
+| `src/handlers/function-url/routes/<route>/operations/` | interaction type 固有のオーケストレーション、feature・repository・integration 呼び出し、後追いジョブ message の組み立てと enqueue、deferred ack の生成 | route の選択、署名検証、HTTP response の形成、別 operation の呼び出し、確定メッセージの生成 |
 | `src/handlers/sqs-worker/jobs/` | interaction ジョブ固有の実処理、確定メッセージの生成、feature・repository・integration 呼び出し | SQS event の検証、ジョブの振り分け、route で済んだ入力検証 |
 | `src/handlers/function-url/routes/<route>/contracts/` | その Bot のスラッシュコマンド契約(`commands.ts`・`prefixes.ts`。CD が deploy 後に global scope へ同期) | コマンドの実行処理 |
 | `src/handlers/function-url/routes/intermediate-models/` | operation 結果の中間表現(`operation-result.ts`) | HTTP response の形成、operation の実装 |
@@ -46,7 +45,7 @@ Discord interaction は 3 秒以内に応答しないと失敗するため、`fu
 handlers/batch:        handler -> jobs -> features / repositories / integrations
 handlers/function-url: handler -> routes -> operations -> features / repositories
 handlers/sqs-worker:   handler -> jobs -> features / repositories / integrations
-routes/operations -> handlers/function-url/interaction-job -> packages/integrations/sqs
+routes/operations -> packages/integrations/*
 routes/operations -> external-protocols
 jobs -> external-protocols
 jobs -> packages/integrations/*
@@ -55,7 +54,6 @@ features -> repositories
 ```
 
 - handler ツリー間で import しない。共有するものは `src/features/` か `packages/*` に置く。function-url と sqs-worker が共有する interaction ジョブの契約は `src/features/interaction-job/` に置く。
-- operation は integration を直接呼ばず、SQS 送信は `handlers/function-url/interaction-job/` 経由で行う。
 - route から feature を直接呼び出さない。依存方向は必ず `route -> operation -> feature` とする。
 - 複数 feature の組み合わせや repository・integration の呼び出し順序は、batch では `jobs/`、function-url では `operations/` に置く。単なる repository 転送だけの feature は作らない。
 
@@ -63,6 +61,7 @@ features -> repositories
 
 - job 名は実行内容が分かるバッチ名(例: `uma-one-draw-topic`)にし、`contracts/job-names.ts` へ追加して `handler.ts` の `batchJobs` 対応表に登録する。
 - interaction ジョブを追加するときは `features/interaction-job/job-names.ts` に job 名、`queue-message.ts` にその job が必要とする値だけの message を追加し、`handlers/sqs-worker/handler.ts` の振り分けへ登録する。message には interaction token を載せるため、ログや `details` へ出さない。
+- operation から enqueue するときは message を `InteractionJobMessage` として宣言してから `SqsMessageSender` へ渡す。`SqsMessageInput` の `body` は `unknown` のため、型注釈がないと契約違反を検出できない。
 - sqs-worker は record 単位で失敗を分離し、失敗した message だけを `batchItemFailures` で再試行対象にする。
 - 起動イベントは `unknown` として受け取り、`schema.ts` で検証・正規化してから使う。レスポンスは `BatchResponse` に合わせ、呼び出し元が機械的に扱える形にする。
 - linked secret は handler / job 内で `Resource.<name>.value` を直接読み、型は `sst-resource-links.d.ts` に宣言を追加する。環境変数は `process.env.<NAME>` を直接読む。

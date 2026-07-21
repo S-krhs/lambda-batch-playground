@@ -6,12 +6,24 @@ import {
 } from "@/external-protocols/discord-message/parse.js";
 import { playCheckReminderOperation } from "./play-check-reminder-operation.js";
 
-const enqueue = vi.hoisted(() => {
-	return { enqueueInteractionJob: vi.fn() };
+const sqs = vi.hoisted(() => {
+	return { sendMessages: vi.fn() };
 });
 
-vi.mock("@/handlers/function-url/interaction-job/enqueue.js", () => {
-	return { enqueueInteractionJob: enqueue.enqueueInteractionJob };
+vi.mock("@eskra-aws-playground/integration-sqs/sqs-message-sender.js", () => {
+	return {
+		SqsMessageSender: class {
+			sendMessages = sqs.sendMessages;
+		},
+	};
+});
+
+vi.mock("sst/resource", () => {
+	return {
+		Resource: {
+			PlaygroundInteractionQueue: { url: "https://sqs.test/interaction-queue" },
+		},
+	};
 });
 
 const callback: DiscordInteractionCallback = {
@@ -35,7 +47,7 @@ const execute = (customId: string, pressedUserId: string) => {
 };
 
 beforeEach(() => {
-	enqueue.enqueueInteractionJob.mockReset();
+	sqs.sendMessages.mockReset();
 });
 
 describe("playCheckReminderOperation", () => {
@@ -46,19 +58,24 @@ describe("playCheckReminderOperation", () => {
 	])("対象ユーザーの %s 選択は結果反映ジョブを enqueue し deferred update で ACK する", async (action) => {
 		const result = await execute(`play-check-reminder:123:${action}`, "123");
 
-		expect(enqueue.enqueueInteractionJob).toHaveBeenCalledWith({
-			job: "play-check-reminder-choice",
-			applicationId: "999",
-			token: "tok",
-			action,
-		});
+		expect(sqs.sendMessages).toHaveBeenCalledWith([
+			{
+				id: "interaction-job",
+				body: {
+					job: "play-check-reminder-choice",
+					applicationId: "999",
+					token: "tok",
+					action,
+				},
+			},
+		]);
 		expect(result).toEqual({ kind: "OK", data: { type: 6 } });
 	});
 
 	it("対象外ユーザーには enqueue せず即時の専用メッセージ payload を返す", async () => {
 		const result = await execute("play-check-reminder:123:won", "999");
 
-		expect(enqueue.enqueueInteractionJob).not.toHaveBeenCalled();
+		expect(sqs.sendMessages).not.toHaveBeenCalled();
 		expect(result).toEqual({
 			kind: "OK",
 			data: {
@@ -78,6 +95,6 @@ describe("playCheckReminderOperation", () => {
 		expect(
 			await execute("play-check-reminder:123:unknown", "123"),
 		).toBeUndefined();
-		expect(enqueue.enqueueInteractionJob).not.toHaveBeenCalled();
+		expect(sqs.sendMessages).not.toHaveBeenCalled();
 	});
 });

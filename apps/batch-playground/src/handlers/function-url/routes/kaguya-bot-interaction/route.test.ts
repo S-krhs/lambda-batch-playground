@@ -18,16 +18,21 @@ vi.mock("sst/resource", () => {
 	return {
 		Resource: {
 			KaguyaDiscordInteractionPublicKey: { value: "kaguya-public-key" },
+			PlaygroundInteractionQueue: { url: "https://sqs.test/interaction-queue" },
 		},
 	};
 });
 
-const enqueue = vi.hoisted(() => {
-	return { enqueueInteractionJob: vi.fn() };
+const sqs = vi.hoisted(() => {
+	return { sendMessages: vi.fn() };
 });
 
-vi.mock("@/handlers/function-url/interaction-job/enqueue.js", () => {
-	return { enqueueInteractionJob: enqueue.enqueueInteractionJob };
+vi.mock("@eskra-aws-playground/integration-sqs/sqs-message-sender.js", () => {
+	return {
+		SqsMessageSender: class {
+			sendMessages = sqs.sendMessages;
+		},
+	};
 });
 
 const applicationId = "888888888888888888";
@@ -48,7 +53,7 @@ const buildEvent = (body: string): FunctionUrlEvent => {
 beforeEach(() => {
 	verifier.verifyInteractionSignature.mockReset();
 	verifier.verifyInteractionSignature.mockReturnValue(true);
-	enqueue.enqueueInteractionJob.mockReset();
+	sqs.sendMessages.mockReset();
 });
 
 describe("kaguyaBotInteractionRoute", () => {
@@ -78,11 +83,16 @@ describe("kaguyaBotInteractionRoute", () => {
 			),
 		);
 
-		expect(enqueue.enqueueInteractionJob).toHaveBeenCalledWith({
-			job: "kaguya-inuihiroshi-reply",
-			applicationId,
-			token,
-		});
+		expect(sqs.sendMessages).toHaveBeenCalledWith([
+			{
+				id: "interaction-job",
+				body: {
+					job: "kaguya-inuihiroshi-reply",
+					applicationId,
+					token,
+				},
+			},
+		]);
 		expect(JSON.parse(response.body)).toEqual({ type: 5 });
 	});
 

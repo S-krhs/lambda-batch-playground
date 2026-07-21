@@ -3,12 +3,24 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DiscordInteractionCallback } from "@/external-protocols/discord-message/parse.js";
 import { helloCommandOperation } from "./hello-command-operation.js";
 
-const enqueue = vi.hoisted(() => {
-	return { enqueueInteractionJob: vi.fn() };
+const sqs = vi.hoisted(() => {
+	return { sendMessages: vi.fn() };
 });
 
-vi.mock("@/handlers/function-url/interaction-job/enqueue.js", () => {
-	return { enqueueInteractionJob: enqueue.enqueueInteractionJob };
+vi.mock("@eskra-aws-playground/integration-sqs/sqs-message-sender.js", () => {
+	return {
+		SqsMessageSender: class {
+			sendMessages = sqs.sendMessages;
+		},
+	};
+});
+
+vi.mock("sst/resource", () => {
+	return {
+		Resource: {
+			PlaygroundInteractionQueue: { url: "https://sqs.test/interaction-queue" },
+		},
+	};
 });
 
 const callback: DiscordInteractionCallback = {
@@ -17,18 +29,23 @@ const callback: DiscordInteractionCallback = {
 };
 
 beforeEach(() => {
-	enqueue.enqueueInteractionJob.mockReset();
+	sqs.sendMessages.mockReset();
 });
 
 describe("helloCommandOperation", () => {
 	it("あいさつジョブを enqueue し公開 deferred で ACK する", async () => {
 		const result = await helloCommandOperation(callback);
 
-		expect(enqueue.enqueueInteractionJob).toHaveBeenCalledWith({
-			job: "yaccho-hello-reply",
-			applicationId: "999",
-			token: "tok",
-		});
+		expect(sqs.sendMessages).toHaveBeenCalledWith([
+			{
+				id: "interaction-job",
+				body: {
+					job: "yaccho-hello-reply",
+					applicationId: "999",
+					token: "tok",
+				},
+			},
+		]);
 		expect(result).toEqual({ kind: "OK", data: { type: 5 } });
 	});
 });
