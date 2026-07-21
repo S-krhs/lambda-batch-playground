@@ -22,6 +22,17 @@ vi.mock("sst/resource", () => {
 	};
 });
 
+const enqueue = vi.hoisted(() => {
+	return { enqueueInteractionJob: vi.fn() };
+});
+
+vi.mock("@/handlers/function-url/interaction-job/enqueue.js", () => {
+	return { enqueueInteractionJob: enqueue.enqueueInteractionJob };
+});
+
+const applicationId = "888888888888888888";
+const token = "interaction-token";
+
 const buildEvent = (body: string): FunctionUrlEvent => {
 	return {
 		rawPath: paths.kaguyaBotInteraction,
@@ -37,6 +48,7 @@ const buildEvent = (body: string): FunctionUrlEvent => {
 beforeEach(() => {
 	verifier.verifyInteractionSignature.mockReset();
 	verifier.verifyInteractionSignature.mockReturnValue(true);
+	enqueue.enqueueInteractionJob.mockReset();
 });
 
 describe("kaguyaBotInteractionRoute", () => {
@@ -53,20 +65,25 @@ describe("kaguyaBotInteractionRoute", () => {
 		expect(JSON.parse(response.body)).toEqual({ type: 1 });
 	});
 
-	it("/inuihiroshiには指定されたメッセージを返す", async () => {
+	it("/inuihiroshiは宣言ジョブをenqueueし公開deferredでACKする", async () => {
 		const response = await kaguyaBotInteractionRoute(
 			buildEvent(
-				'{"type":2,"data":{"name":"inuihiroshi"},"user":{"id":"123"}}',
+				JSON.stringify({
+					type: 2,
+					application_id: applicationId,
+					token,
+					data: { name: "inuihiroshi" },
+					user: { id: "123" },
+				}),
 			),
 		);
 
-		expect(JSON.parse(response.body)).toEqual({
-			type: 4,
-			data: {
-				content: "自由だ～～～～！！！！！！！",
-				allowed_mentions: { parse: [] },
-			},
+		expect(enqueue.enqueueInteractionJob).toHaveBeenCalledWith({
+			job: "kaguya-inuihiroshi-reply",
+			applicationId,
+			token,
 		});
+		expect(JSON.parse(response.body)).toEqual({ type: 5 });
 	});
 
 	it("未対応commandにはephemeralメッセージを返す", async () => {

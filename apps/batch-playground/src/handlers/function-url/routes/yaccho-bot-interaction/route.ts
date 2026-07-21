@@ -58,31 +58,40 @@ export const yacchoBotInteractionRoute = async (
 	}
 
 	// 3. interaction の種類と登録済み command・prefix から応答を解決する。
+	// ping・autocomplete は 3 秒制限内に確定応答を返し、その他は deferred 応答で ACK して後追いジョブへ委譲する。
+	const { callback } = parsedRequest.data;
 	let result: OperationResult<DiscordInteractionResponsePayload>;
 	if (interaction.kind === "ping") {
 		result = pingOperation();
 	} else if (interaction.kind === "autocomplete") {
 		result = autocompleteOperation();
+	} else if (!callback) {
+		logger.failure(new Error("interaction callback を取得できませんでした。"));
+		result = ephemeralOperation(
+			"応答の準備に失敗しました。もう一度お試しください。",
+		);
 	} else if (
 		interaction.kind === "application-command" &&
 		interaction.command.name === commands.hello.name
 	) {
-		result = helloCommandOperation();
+		result = await helloCommandOperation(callback);
 	} else if (
 		interaction.kind === "application-command" &&
 		interaction.command.name === commands.gambleCheckEnable.name
 	) {
-		result = await gambleCheckEnableOperation(interaction);
+		result = await gambleCheckEnableOperation(interaction, callback);
 	} else if (
 		interaction.kind === "application-command" &&
 		interaction.command.name === commands.gambleCheckDisable.name
 	) {
-		result = await gambleCheckDisableOperation(interaction);
+		result = await gambleCheckDisableOperation(interaction, callback);
 	} else if (
 		interaction.kind === "message-component" &&
 		interaction.customId?.prefix === prefixes.playCheckReminder
 	) {
-		result = playCheckReminderOperation(interaction) ?? unsupported();
+		result =
+			(await playCheckReminderOperation(interaction, callback)) ??
+			unsupported();
 	} else {
 		result = unsupported();
 	}

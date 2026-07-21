@@ -49,14 +49,17 @@ export const kaguyaBotInteractionRoute = async (
 	}
 
 	// 3. interaction の種類と登録済み command から応答を解決する。
+	// ping は 3 秒制限内に確定応答を返し、command は deferred 応答で ACK して後追いジョブへ委譲する。
+	const { callback } = parsedRequest.data;
 	let result: OperationResult<DiscordInteractionResponsePayload>;
 	if (interaction.kind === "ping") {
 		result = pingOperation();
 	} else if (
 		interaction.kind === "application-command" &&
-		interaction.command.name === commands.inuihiroshi.name
+		interaction.command.name === commands.inuihiroshi.name &&
+		callback
 	) {
-		result = inuihiroshiCommandOperation();
+		result = await inuihiroshiCommandOperation(callback);
 	} else {
 		result = ephemeralOperation("この操作には対応していません。");
 	}
