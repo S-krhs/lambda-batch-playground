@@ -1,4 +1,4 @@
-// In scope: Discord API への JSON 送信(POST/PUT)の timeout 制御・応答検査・エラー整形を共通化する
+// In scope: Discord API への JSON 送信(POST/PUT/PATCH)の timeout 制御・応答検査・エラー整形を共通化する
 // Out of scope: 各 API 固有の URL 組み立て、認証情報の解決、payload 生成を行う
 import {
 	sanitizeText,
@@ -14,8 +14,8 @@ export interface JsonResponseDetails {
 /** JSON 送信の実行に必要な入力。 */
 export interface JsonSendRequest {
 	url: string;
-	/** HTTP メソッド。一覧の総入れ替えなど冪等な更新には PUT を使う。 */
-	method: "POST" | "PUT";
+	/** HTTP メソッド。一覧の総入れ替えなど冪等な更新には PUT、既存リソースの部分更新には PATCH を使う。 */
+	method: "POST" | "PUT" | "PATCH";
 	headers?: Record<string, string>;
 	payload: unknown;
 	timeoutMs: number;

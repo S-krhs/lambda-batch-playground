@@ -13,6 +13,9 @@ Discord API への実通信境界を担当する integration package です。
 - `src/discord-command-client.ts`
   - `DiscordCommandClient`: application の global／guild command を取得し、bulk overwrite するクライアント。
   - `DiscordCommandError`: Command API 連携で発生した失敗を表すエラー。
+- `src/discord-interaction-client.ts`
+  - `DiscordInteractionClient`: deferred 応答済み interaction の元メッセージ編集と follow-up 投稿を行うクライアント。
+  - `DiscordInteractionError`: Interaction API 連携で発生した失敗を表すエラー。
 
 ## 責務
 
